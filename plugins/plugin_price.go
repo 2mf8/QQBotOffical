@@ -188,7 +188,7 @@ func (price *PricePlugin) Do(ctx *context.Context, guildId, channelId, userId, m
 		}
 	}
 
-	if public.Contains(priceSearch, "黄小姐") {
+	if public.Contains(priceSearch, "奇乐") {
 		if public.StartsWith(s, "#+") && (isAdmin || isBotAdmin) {
 			str4 := strings.TrimSpace(string([]byte(s)[len("#+"):]))
 			str5 := strings.Split(str4, "##")
