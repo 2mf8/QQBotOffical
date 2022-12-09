@@ -7,16 +7,16 @@ import (
 	"strings"
 
 	"github.com/2mf8/QQBotOffical/public"
-	. "github.com/2mf8/QQBotOffical/public"
 	"github.com/2mf8/QQBotOffical/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 type Admin struct {
 }
 
-func (admin *Admin) Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool) utils.RetStuct {
+func (admin *Admin) Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool, priceSearch string) utils.RetStuct {
 
-	s, b := Prefix(msg, ".")
+	s, b := public.Prefix(msg, ".")
 
 	if !b || !(public.StartsWith(s, "jin") || public.StartsWith(s, "jie") || public.StartsWith(s, "t") || public.StartsWith(s, "T")) {
 		return utils.RetStuct{
@@ -25,10 +25,12 @@ func (admin *Admin) Do(ctx *context.Context, guildId, channelId, userId, msg, ms
 	}
 
 	if !botIsAdmin {
+		reply := "机器人不是管理员，无法进行禁言或踢人操作"
+		log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, reply)
 		return utils.RetStuct{
 			RetVal: utils.MESSAGE_BLOCK,
 			ReplyMsg: &utils.Msg{
-				Text: "机器人不是管理员，无法进行禁言或踢人操作",
+				Text: reply,
 			},
 		}
 	}
@@ -46,7 +48,7 @@ func (admin *Admin) Do(ctx *context.Context, guildId, channelId, userId, msg, ms
 	str1 = strings.TrimSpace(reg2.ReplaceAllString(str1, "at qq=\""))
 	str2 := strings.TrimSpace(reg3.ReplaceAllString(str1, "\"/>"))
 
-	for Contains(str2, "  ") {
+	for public.Contains(str2, "  ") {
 		str2 = strings.TrimSpace(reg4.ReplaceAllString(str2, " "))
 	}
 
@@ -57,19 +59,23 @@ func (admin *Admin) Do(ctx *context.Context, guildId, channelId, userId, msg, ms
 
 	if public.StartsWith(str2, "jin") {
 		if len(cstrs) == 0 {
+			reply := "禁言用户不能为空"
+			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, reply)
 			return utils.RetStuct{
 				RetVal: utils.MESSAGE_BLOCK,
 				ReplyMsg: &utils.Msg{
-					Text: "禁言用户不能为空",
+					Text: reply,
 				},
 				ReqType: utils.GuildBan,
 			}
 		}
 		if jinTime == "-1" {
+			reply := "禁言时间有误或超过最大允许范围"
+			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, reply)
 			return utils.RetStuct{
 				RetVal: utils.MESSAGE_BLOCK,
 				ReplyMsg: &utils.Msg{
-					Text: "禁言时间有误或超过最大允许范围",
+					Text: reply,
 				},
 				ReqType: utils.GuildBan,
 			}
@@ -87,10 +93,12 @@ func (admin *Admin) Do(ctx *context.Context, guildId, channelId, userId, msg, ms
 
 	if public.StartsWith(str2, "jie") {
 		if len(cstrs) == 0 {
+			reply := "解禁用户不能为空"
+			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, reply)
 			return utils.RetStuct{
 				RetVal: utils.MESSAGE_BLOCK,
 				ReplyMsg: &utils.Msg{
-					Text: "解禁用户不能为空",
+					Text: reply,
 				},
 				ReqType: utils.RelieveBan,
 			}
@@ -110,10 +118,12 @@ func (admin *Admin) Do(ctx *context.Context, guildId, channelId, userId, msg, ms
 			retract = -1
 		}
 		if len(cstrs) == 0 {
+			reply := "被踢用户不能为空"
+			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, reply)
 			return utils.RetStuct{
 				RetVal: utils.MESSAGE_BLOCK,
 				ReplyMsg: &utils.Msg{
-					Text: "被踢用户不能为空",
+					Text: reply,
 				},
 				ReqType: utils.GuildKick,
 			}
@@ -134,5 +144,5 @@ func (admin *Admin) Do(ctx *context.Context, guildId, channelId, userId, msg, ms
 }
 
 func init() {
-	utils.Register("群管", &Admin{})
+	utils.Register("频道管理", &Admin{})
 }

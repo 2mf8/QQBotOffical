@@ -3,7 +3,6 @@ module github.com/2mf8/QQBotOffical
 go 1.19
 
 require (
-	github.com/2mf8/GoPbBot v0.0.0-20220820125118-07766a14c58a
 	github.com/BurntSushi/toml v1.2.1
 	github.com/denisenkom/go-mssqldb v0.12.3
 	github.com/fatih/color v1.13.0
@@ -32,6 +31,5 @@ require (
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d // indirect
 	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
 	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8 // indirect
-	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )

@@ -1,12 +1,11 @@
 package database
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"time"
 
-	. "github.com/2mf8/QQBotOffical/public"
+	"github.com/2mf8/QQBotOffical/public"
 	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/gomodule/redigo/redis"
 )
@@ -28,29 +27,27 @@ type SwitchSync struct {
 type intent int
 
 const (
-	PluginGuard     intent = 1 << iota // 守卫
-	PluginBlock                        // 个人屏蔽
-	PluginSwitch                       // 开关
-	PluginRepeat                       // 复读
-	PluginReply                        // 回复
-	PluginAdmin                        // 频道管理
-	PluginSubscribe                    // 查价订阅
-	PluginPrice                        // 查价
-	PluginScramble                     // 打乱
-	PluginLearn                        // 频道学习
+	PluginGuard    intent = 1 << iota // 守卫
+	PluginBlock                       // 个人屏蔽
+	PluginSwitch                      // 开关
+	PluginRepeat                      // 复读
+	PluginReply                       // 回复
+	PluginAdmin                       // 频道管理
+	PluginPrice                       // 查价
+	PluginScramble                    // 打乱
+	PluginLearn                       // 频道学习
 )
 
 var IntentMap = map[intent]string{
-	PluginGuard:     "守卫",
-	PluginBlock:     "屏蔽",
-	PluginSwitch:    "开关",
-	PluginRepeat:    "复读",
-	PluginReply:     "回复",
-	PluginAdmin:     "频道管理",
-	PluginSubscribe: "订阅",
-	PluginPrice:     "查价",
-	PluginScramble:  "打乱",
-	PluginLearn:     "学习",
+	PluginGuard:    "守卫",
+	PluginBlock:    "屏蔽",
+	PluginSwitch:   "开关",
+	PluginRepeat:   "复读",
+	PluginReply:    "回复",
+	PluginAdmin:    "频道管理",
+	PluginPrice:    "查价",
+	PluginScramble: "打乱",
+	PluginLearn:    "学习",
 }
 
 var SwitchMap = map[string]intent{
@@ -60,13 +57,10 @@ var SwitchMap = map[string]intent{
 	"复读":   PluginRepeat,
 	"回复":   PluginReply,
 	"频道管理": PluginAdmin,
-	"订阅":   PluginSubscribe,
 	"查价":   PluginPrice,
 	"打乱":   PluginScramble,
 	"学习":   PluginLearn,
 }
-
-var ctx = context.Background()
 
 func (bot_switch *Switch) SwitchCreate() (err error) {
 	statement := "insert into [kequ5060].[dbo].[guild_switch] (guild_id, channel_id, is_close_or_guard, admin_id, gmt_modified) values ($1, $2, $3, $4, $5) select @@identity"
@@ -209,8 +203,8 @@ func SGBGIACI(guildId, channelId string) (bot_switch_sync SwitchSync, err error)
 		fmt.Println("[查询] 首次查询-开关", bw)
 		err = Db.QueryRow("select ID, guild_id, channel_id, is_close_or_guard, admin_id, gmt_modified from [kequ5060].[dbo].[guild_switch] where guild_id = $1 and channel_id = $2", guildId, channelId).Scan(&bot_switch_sync.PluginSwitch.Id, &bot_switch_sync.PluginSwitch.GuildId, &bot_switch_sync.PluginSwitch.ChannelId, &bot_switch_sync.PluginSwitch.IsCloseOrGuard, &bot_switch_sync.PluginSwitch.AdminId, &bot_switch_sync.PluginSwitch.GmtModified)
 		info := fmt.Sprintf("%s", err)
-		if StartsWith(info, "sql") || StartsWith(info, "unable") {
-			if StartsWith(info, "unable") {
+		if public.StartsWith(info, "sql") || public.StartsWith(info, "unable") {
+			if public.StartsWith(info, "unable") {
 				fmt.Println(info)
 			}
 			bot_switch_sync = SwitchSync{

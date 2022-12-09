@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"regexp"
@@ -21,6 +20,7 @@ import (
 	"github.com/tencent-connect/botgo"
 	"github.com/tencent-connect/botgo/dto"
 	"github.com/tencent-connect/botgo/event"
+	"github.com/tencent-connect/botgo/openapi"
 	"github.com/tencent-connect/botgo/token"
 	"github.com/tencent-connect/botgo/websocket"
 )
@@ -30,7 +30,7 @@ func main() {
 	log.Infoln("欢迎您使用QQBotOffical")
 	_, err := os.Stat("conf.toml")
 	if err != nil {
-		_ = ioutil.WriteFile("conf.toml", []byte("Plugins = [\"守卫\",\"屏蔽\",\"开关\",\"复读\",\"回复\",\"群管\",\"查价\",\"打乱\",\"学习\"]   # 插件管理\nAppId = 0   # 机器人AppId\nAccessToken = \"\"   # 机器人AccessToken\nAdmins = []   # 机器人管理员管理\nDatabaseUser = \"\"   # MSSQL数据库用户名\nDatabasePassword = \"\"   # MSSQL数据库密码\nDatabasePort = 1433   # MSSQL数据库服务端口\nDatabaseServer = \"127.0.0.1\"   # MSSQL数据库服务网址\nServerPort = 8081   # 服务端口\nScrambleServer = \"http://localhost:2014\"   # 打乱服务地址"), 0644)
+		_ = os.WriteFile("conf.toml", []byte("Plugins = [\"守卫\",\"屏蔽\",\"开关\",\"复读\",\"回复\",\"频道管理\",\"查价\",\"打乱\",\"学习\"]   # 插件管理\nAppId = 0   # 机器人AppId\nAccessToken = \"\"   # 机器人AccessToken\nAdmins = []   # 机器人管理员管理\nDatabaseUser = \"\"   # MSSQL数据库用户名\nDatabasePassword = \"\"   # MSSQL数据库密码\nDatabasePort = 1433   # MSSQL数据库服务端口\nDatabaseServer = \"127.0.0.1\"   # MSSQL数据库服务网址\nServerPort = 8081   # 服务端口\nScrambleServer = \"http://localhost:2014\"   # 打乱服务地址"), 0644)
 		os.Exit(1)
 	}
 	plugin, _ := public.TbotConf()
@@ -42,14 +42,18 @@ func main() {
 	api := botgo.NewOpenAPI(token).WithTimeout(3 * time.Second)
 	ctx := context.Background()
 	ws, err := api.WS(ctx, nil, "")
-	log.Printf("%+v, err:%v", ws, err)
 	if err != nil {
 		log.Printf("%+v, err:%v", ws, err)
 	}
 	// role 4 频道主 11 普通成员 2 管理员 5 子频道管理 13 普通成员
 	// 监听哪类事件就需要实现哪类的 handler，定义：websocket/event_handler.go
 	var message event.MessageEventHandler = func(event *dto.WSPayload, data *dto.WSMessageData) error {
-		fmt.Printf(string(event.RawMessage), data)
+		imgStr := ""
+		if len(data.Attachments) != 0 {
+			for _, imgUrl := range data.Attachments {
+				imgStr += "<img:\"" + imgUrl.URL + "\">"
+			}
+		}
 		guildId := data.GuildID               // 频道Id
 		channelId := data.ChannelID           // 子频道Id
 		userId := data.Author.ID              // 用户Id
@@ -86,19 +90,19 @@ func main() {
 			}
 			//api.DeleteGuildMember()
 		}
-		guild, err := api.Guild(ctx, data.GuildID)
-		if err != nil {
-			log.Warnf("获取频道信息出错， err = %+v", err)
-			return nil
-		}
 		channel, err := api.Channel(ctx, channelId)
 		if err != nil {
 			log.Warnf("获取子频道信息出错， err = %+v", err)
 			return nil
 		}
-		fmt.Println(guild.Name, channel.Name, userId, rawMsg, msgId, username, avatar, isBot, srcGuildID, isDirectMessage, roles, isBotAdmin, botIsAdmin)
-		log.Infof("GuildId(%s) ChannelId(%s) UserId(%s)：%s", guildId, channelId, userId, rawMsg)
-		ctx := context.WithValue(context.Background(), "key", "value")
+		priceSearch := channel.Name
+
+		if imgStr == "" {
+			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) <- %s", guildId, channelId, userId, rawMsg)
+		} else {
+			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) <- %s %s", guildId, channelId, userId, rawMsg, imgStr)
+		}
+		ctx := context.WithValue(context.Background(), botLoginInfo, plugin)
 		sg, _ := database.SGBGIACI(guildId, channelId)
 		for _, i := range plugin.Conf {
 			intent := sg.PluginSwitch.IsCloseOrGuard & int64(database.PluginNameToIntent(i))
@@ -108,10 +112,9 @@ func main() {
 			if intent > 0 {
 				continue
 			}
-			retStuct := utils.PluginSet[i].Do(&ctx, guildId, channelId, userId, rawMsg, msgId, username, avatar, srcGuildID, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin)
+			retStuct := utils.PluginSet[i].Do(&ctx, guildId, channelId, userId, rawMsg, msgId, username, avatar, srcGuildID, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin, priceSearch)
 			if retStuct.RetVal == utils.MESSAGE_BLOCK {
 				if retStuct.ReqType == utils.GuildMsg {
-					log.Println(retStuct.ReplyMsg.Text)
 					if retStuct.ReplyMsg != nil {
 						newMsg := &dto.MessageToCreate{
 							Content: retStuct.ReplyMsg.Text,
@@ -142,16 +145,20 @@ func main() {
 					} else if len(retStuct.BanId) == 1 {
 						err := api.MemberMute(ctx, guildId, retStuct.BanId[0], &dto.UpdateGuildMute{MuteSeconds: retStuct.Duration})
 						if err != nil {
+							reply := "禁言用户<@!" + retStuct.BanId[0] + ">出错，请确认被禁言身份后重试"
+							log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, reply)
 							newMsg := &dto.MessageToCreate{
-								Content: "禁言用户<@!" + retStuct.BanId[0] + ">出错，请确认被禁言身份后重试",
+								Content: reply,
 								MsgID:   data.ID,
 							}
 							api.PostMessage(ctx, channelId, newMsg)
 							break
 						}
 						if retStuct.ReplyMsg != nil {
+							reply := "已禁言用户<@!" + retStuct.BanId[0] + ">" + retStuct.ReplyMsg.Text
+							log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, reply)
 							newMsg := &dto.MessageToCreate{
-								Content: "已禁言用户<@!" + retStuct.BanId[0] + ">" + retStuct.ReplyMsg.Text,
+								Content: reply,
 								MsgID:   data.ID,
 							}
 							api.PostMessage(ctx, channelId, newMsg)
@@ -164,16 +171,20 @@ func main() {
 							UserIDs:     retStuct.BanId,
 						})
 						if err != nil {
+							reply := "批量禁言用户出错，请确认被禁言用户身份后重试"
+							log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, reply)
 							newMsg := &dto.MessageToCreate{
-								Content: "批量禁言用户出错，请确认被禁言用户身份后重试",
+								Content: reply,
 								MsgID:   data.ID,
 							}
 							api.PostMessage(ctx, channelId, newMsg)
 							break
 						}
 						if retStuct.ReplyMsg != nil {
+							reply := "已批量禁言用户" + retStuct.ReplyMsg.Text
+							log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, reply)
 							newMsg := &dto.MessageToCreate{
-								Content: "已批量禁言用户" + retStuct.ReplyMsg.Text,
+								Content: reply,
 								MsgID:   data.ID,
 							}
 							api.PostMessage(ctx, channelId, newMsg)
@@ -196,15 +207,19 @@ func main() {
 					} else if len(retStuct.BanId) == 1 {
 						err := api.MemberMute(ctx, guildId, retStuct.BanId[0], &dto.UpdateGuildMute{MuteSeconds: retStuct.Duration})
 						if err != nil {
+							reply := "解除禁言用户<@!" + retStuct.BanId[0] + ">出错"
+							log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, reply)
 							newMsg := &dto.MessageToCreate{
-								Content: "解除禁言用户<@!" + retStuct.BanId[0] + ">出错",
+								Content: reply,
 								MsgID:   data.ID,
 							}
 							api.PostMessage(ctx, channelId, newMsg)
 							break
 						}
+						reply := "已解除禁言用户<@!" + retStuct.BanId[0] + ">的禁言"
+						log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, reply)
 						newMsg := &dto.MessageToCreate{
-							Content: "已解除禁言用户<@!" + retStuct.BanId[0] + ">的禁言",
+							Content: reply,
 							MsgID:   data.ID,
 						}
 						api.PostMessage(ctx, channelId, newMsg)
@@ -215,15 +230,19 @@ func main() {
 							UserIDs:     retStuct.BanId,
 						})
 						if err != nil {
+							reply := "批量解除禁言用户出错"
+							log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, reply)
 							newMsg := &dto.MessageToCreate{
-								Content: "批量解除禁言用户出错",
+								Content: reply,
 								MsgID:   data.ID,
 							}
 							api.PostMessage(ctx, channelId, newMsg)
 							break
 						}
+						reply := "已批量解除禁言用户的禁言"
+						log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, reply)
 						newMsg := &dto.MessageToCreate{
-							Content: "已批量解除禁言用户的禁言",
+							Content: reply,
 							MsgID:   data.ID,
 						}
 						api.PostMessage(ctx, channelId, newMsg)
@@ -246,8 +265,10 @@ func main() {
 					for _, ban_id := range retStuct.BanId {
 						err = api.DeleteGuildMember(ctx, guildId, ban_id, dto.WithAddBlackList(retStuct.RejectAddAgain), dto.WithDeleteHistoryMsg(retStuct.Retract))
 						if err != nil {
+							reply := "移除用户<@!" + ban_id + ">出错，请确认被移除用户身份后重试"
+							log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, reply)
 							newMsg := &dto.MessageToCreate{
-								Content: "移除用户<@!" + ban_id + ">出错，请确认被移除用户身份后重试",
+								Content: reply,
 								MsgID:   data.ID,
 							}
 							api.PostMessage(ctx, channelId, newMsg)
@@ -267,6 +288,7 @@ func main() {
 							tMsg = "批量移除用户成功"
 						}
 					}
+					log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, tMsg)
 					newMsg := &dto.MessageToCreate{
 						Content: tMsg,
 						MsgID:   data.ID,
@@ -277,6 +299,14 @@ func main() {
 				if retStuct.ReqType == utils.GuildLeave {
 				}
 				if retStuct.ReqType == utils.DeleteMsg {
+					api.MemberMute(ctx, guildId, userId, &dto.UpdateGuildMute{MuteSeconds: "120"})
+					newMsg := &dto.MessageToCreate{
+						Content: retStuct.ReplyMsg.Text,
+						MsgID:   data.ID,
+					}
+					api.PostMessage(ctx, channelId, newMsg)
+					api.RetractMessage(ctx, channelId, msgId, openapi.RetractMessageOptionHidetip, openapi.RetractMessageOptionHidetip)
+					break
 				}
 			}
 		}

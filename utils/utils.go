@@ -11,13 +11,13 @@ import (
 type ReqType int
 
 const (
-	GuildBan    ReqType = iota // 频道禁言
-	RelieveBan                 // 禁言解除
-	GuildKick                  // 频道踢人
-	GuildMsg                   // 频道消息
-	GuildLeave                 // 退频道
-	DeleteMsg                  // 消息撤回
-	Undefined                  // 未定义
+	GuildBan   ReqType = iota // 频道禁言
+	RelieveBan                // 禁言解除
+	GuildKick                 // 频道踢人
+	GuildMsg                  // 频道消息
+	GuildLeave                // 退频道
+	DeleteMsg                 // 消息撤回
+	Undefined                 // 未定义
 )
 
 type RetStuct struct {
@@ -28,6 +28,7 @@ type RetStuct struct {
 	BanId          []string
 	RejectAddAgain bool
 	Retract        int
+	MsgId          string
 }
 
 type Msg struct {
@@ -37,7 +38,7 @@ type Msg struct {
 }
 
 type Plugin interface {
-	Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool) (retStuct RetStuct)
+	Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool, priceSearch string) (retStuct RetStuct)
 }
 
 var PluginSet map[string]Plugin

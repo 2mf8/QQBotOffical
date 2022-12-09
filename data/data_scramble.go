@@ -1,7 +1,7 @@
 package database
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -49,6 +49,6 @@ func GetScramble(s string) string {
 	if err != nil {
 		return "获取失败"
 	}
-	v, _ := ioutil.ReadAll(resp.Body)
+	v, _ := io.ReadAll(resp.Body)
 	return string(v)
 }

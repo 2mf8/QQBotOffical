@@ -106,7 +106,7 @@ func (learn *Learn) LearnCreate() (err error) {
 	if err != nil {
 		fmt.Println("[错误] Receive出错")
 	}
-	fmt.Sprintf("%#v", v)
+	_ = fmt.Sprintf("%#v", v)
 	return
 }
 
@@ -138,7 +138,7 @@ func (learn *Learn) LearnUpdate(answer null.String) (err error) {
 	if err != nil {
 		fmt.Println("[错误] Receive出错")
 	}
-	fmt.Sprintf("%#v", v)
+	_ = fmt.Sprintf("%#v", v)
 
 	return
 }
@@ -160,7 +160,7 @@ func LearnSave(ask, guildId, channelId, adminId string, answer null.String, gmtM
 		Pass:        pass,
 	}
 	learn_get, err := LearnGet(guildId, channelId, ask)
-	if err != nil || learn_get.IsTrue == false {
+	if err != nil || !learn_get.IsTrue {
 		err = learn.LearnCreate()
 		return
 	}
@@ -191,6 +191,6 @@ func LDBGAA(guildId, channelId, ask string) (err error) {
 	if err != nil {
 		fmt.Println("[错误] Receive出错")
 	}
-	fmt.Sprintf("%#v", v)
+	_ = fmt.Sprintf("%#v", v)
 	return
 }
