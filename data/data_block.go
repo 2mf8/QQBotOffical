@@ -12,11 +12,11 @@ import (
 )
 
 type PBlock struct {
-	Id          int `json:"id"`
-	GuildId     string `json:"guild_id"`
-	UserId      string `json:"user_id"`
-	IsPBlock    bool `json:"ispblock"`
-	AdminId     string `json:"admin_id"`
+	Id          int       `json:"id"`
+	GuildId     string    `json:"guild_id"`
+	UserId      string    `json:"user_id"`
+	IsPBlock    bool      `json:"ispblock"`
+	AdminId     string    `json:"admin_id"`
 	GmtModified time.Time `json:"gmt_modified"`
 }
 
@@ -70,7 +70,7 @@ func PBlockGet(guildId, userId string) (pblockSync PBlockSync, err error) {
 }
 
 func (pBlock *PBlock) PBlockCreate() (err error) {
-	statement := "insert into [kequ5060].[dbo].[guild_pblock] (guild_id, user_id, admin_id, gmt_modified, ispblock) values ($1, $2, $3, $4, $5) select @@identity"
+	statement := "insert into [kequ5060].[dbo].[guild_pblock] values ($1, $2, $3, $4, $5) select @@identity"
 	stmt, err := Db.Prepare(statement)
 	if err != nil {
 		return

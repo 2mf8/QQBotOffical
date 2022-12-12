@@ -73,7 +73,7 @@ func LearnGet(guildId, channelId, ask string) (learnSync LearnSync, err error) {
 }
 
 func (learn *Learn) LearnCreate() (err error) {
-	statement := "insert into [kequ5060].[dbo].[guild_learn] (ask, guild_id, channel_id, admin_id, answer, gmt_modified, pass) values ($1, $2, $3, $4, $5, $6, $7) select @@identity"
+	statement := "insert into [kequ5060].[dbo].[guild_learn] values ($1, $2, $3, $4, $5, $6, $7) select @@identity"
 	stmt, err := Db.Prepare(statement)
 	if err != nil {
 		return

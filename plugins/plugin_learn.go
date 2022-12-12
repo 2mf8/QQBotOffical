@@ -40,7 +40,20 @@ func (learnPlugin *LearnPlugin) Do(ctx *context.Context, guildId, channelId, use
 	reg1 := regexp.MustCompile("＃")
 	str1 := strings.TrimSpace(reg1.ReplaceAllString(s, "#"))
 	if public.StartsWith(str1, "#+") && (isBotAdmin || isAdmin) {
-		//if StartsWith(str1, "#+") && isBotAdmin {
+		suspectedUrl := strings.Split(s, ".")
+		if len(suspectedUrl) > 1 {
+			if suspectedUrl[0] != "" && suspectedUrl[1] != "" {
+				msg := "疑似网址(暂不支持网址)，已被拦截"
+				log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, msg)
+				return utils.RetStuct{
+					RetVal: utils.MESSAGE_BLOCK,
+					ReplyMsg: &utils.Msg{
+						Text: msg,
+					},
+					ReqType: utils.GuildMsg,
+				}
+			}
+		}
 		str2 := strings.TrimSpace(strings.TrimPrefix(str1, "#+"))
 		str3 := strings.Split(str2, "##")
 		if len(str3) != 2 {
@@ -111,6 +124,20 @@ func (learnPlugin *LearnPlugin) Do(ctx *context.Context, guildId, channelId, use
 		}
 	}
 	if public.StartsWith(str1, "++") && isBotAdmin {
+		suspectedUrl := strings.Split(s, ".")
+		if len(suspectedUrl) > 1 {
+			if suspectedUrl[0] != "" && suspectedUrl[1] != "" {
+				msg := "疑似网址(暂不支持网址)，已被拦截"
+				log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, msg)
+				return utils.RetStuct{
+					RetVal: utils.MESSAGE_BLOCK,
+					ReplyMsg: &utils.Msg{
+						Text: msg,
+					},
+					ReqType: utils.GuildMsg,
+				}
+			}
+		}
 		str2 := strings.TrimSpace(strings.TrimPrefix(str1, "++"))
 		str3 := strings.Split(str2, "##")
 		if len(str3) != 2 {
@@ -194,7 +221,7 @@ func (learnPlugin *LearnPlugin) Do(ctx *context.Context, guildId, channelId, use
 	learn_get, err := database.LearnGet(guildId, channelId, strings.TrimSpace(s))
 	//log.Println(learn_get.LearnSync.Answer.String,"ceshil", err)
 	if err != nil || learn_get.LearnSync.Answer.String == "" {
-		sys_learn_get, _ := database.LearnGet( "sys", "sys", strings.TrimSpace(s))
+		sys_learn_get, _ := database.LearnGet("sys", "sys", strings.TrimSpace(s))
 		if sys_learn_get.LearnSync.Answer.String != "" {
 			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, sys_learn_get.LearnSync.Answer.String)
 			return utils.RetStuct{

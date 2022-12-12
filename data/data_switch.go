@@ -3,6 +3,7 @@ package database
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/2mf8/QQBotOffical/public"
@@ -63,7 +64,7 @@ var SwitchMap = map[string]intent{
 }
 
 func (bot_switch *Switch) SwitchCreate() (err error) {
-	statement := "insert into [kequ5060].[dbo].[guild_switch] (guild_id, channel_id, is_close_or_guard, admin_id, gmt_modified) values ($1, $2, $3, $4, $5) select @@identity"
+	statement := "insert into [kequ5060].[dbo].[guild_switch] values ($1, $2, $3, $4, $5) select @@identity"
 	stmt, err := Db.Prepare(statement)
 	if err != nil {
 		return err
@@ -157,6 +158,7 @@ func SwitchSave(guildId, channelId, adminId string, isCloseOrGuard int64, gmtMod
 		PluginSwitch: &bot_switch,
 	}
 	switch_get, err := SGBGIACI(guildId, channelId)
+	fmt.Println(switch_get.IsTrue)
 	if err != nil || !switch_get.IsTrue {
 		err = bot_switch_sync.PluginSwitch.SwitchCreate()
 		return err
@@ -172,7 +174,7 @@ func SwitchSave(guildId, channelId, adminId string, isCloseOrGuard int64, gmtMod
 
 // SDBGI SwitchDeleteByGuildIdAndChannelId
 func SDBGIACI(guildId, channelId string) (err error) {
-	_, err = Db.Exec("delete [kequ5060].[dbo].[guild_switch] where guild_id = $1, channel_id = $2", guildId, channelId)
+	_, err = Db.Exec("delete [kequ5060].[dbo].[guild_switch] where guild_id = $1 and channel_id = $2", guildId, channelId)
 	if err != nil {
 		return err
 	}
@@ -186,7 +188,7 @@ func SGBGIACI(guildId, channelId string) (bot_switch_sync SwitchSync, err error)
 		IsTrue:       true,
 		PluginSwitch: &bot_switch,
 	}
-	bw := bot_switch.GuildId + "_" + bot_switch.ChannelId + "_switchorguard"
+	bw := guildId + "_" + channelId + "_switchorguard"
 	c := Pool.Get()
 	defer c.Close()
 	/*exists, err := redis.Bool(c.Do("exists", bw))
@@ -200,6 +202,7 @@ func SGBGIACI(guildId, channelId string) (bot_switch_sync SwitchSync, err error)
 	var vb []byte
 	vb, err = redis.Bytes(c.Receive())
 	if err != nil {
+		log.Println(err)
 		fmt.Println("[查询] 首次查询-开关", bw)
 		err = Db.QueryRow("select ID, guild_id, channel_id, is_close_or_guard, admin_id, gmt_modified from [kequ5060].[dbo].[guild_switch] where guild_id = $1 and channel_id = $2", guildId, channelId).Scan(&bot_switch_sync.PluginSwitch.Id, &bot_switch_sync.PluginSwitch.GuildId, &bot_switch_sync.PluginSwitch.ChannelId, &bot_switch_sync.PluginSwitch.IsCloseOrGuard, &bot_switch_sync.PluginSwitch.AdminId, &bot_switch_sync.PluginSwitch.GmtModified)
 		info := fmt.Sprintf("%s", err)

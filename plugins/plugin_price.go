@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -98,11 +99,12 @@ func (price *PricePlugin) Do(ctx *context.Context, guildId, channelId, userId, m
 					ReqType: utils.GuildMsg,
 				}
 			}
-			str6 := strings.Split(str5[1], "#&")
+			str6 := strings.Split(str5[1], "#?")
 			if len(str6) != 2 {
 				err := database.ItemSave("10001", "10001", null.String{}, str5[0], null.NewString(str6[0], true), null.String{}, userId, null.NewTime(time.Now(), true))
 				if err != nil {
-					replyText := "（添加失败）"
+					fmt.Println(err)
+					replyText := "添加失败"
 					log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, replyText)
 
 					return utils.RetStuct{
@@ -113,7 +115,7 @@ func (price *PricePlugin) Do(ctx *context.Context, guildId, channelId, userId, m
 						ReqType: utils.GuildMsg,
 					}
 				}
-				replyText := "（添加成功）"
+				replyText := "添加成功"
 				log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, replyText)
 
 				return utils.RetStuct{
@@ -126,7 +128,7 @@ func (price *PricePlugin) Do(ctx *context.Context, guildId, channelId, userId, m
 			}
 			err := database.ItemSave("10001", "10001", null.String{}, str5[0], null.NewString(str6[0], true), null.NewString(str6[1], true), userId, null.NewTime(time.Now(), true))
 			if err != nil {
-				replyText := "（添加失败）"
+				replyText := "添加失败"
 				log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, replyText)
 
 				return utils.RetStuct{
@@ -137,7 +139,7 @@ func (price *PricePlugin) Do(ctx *context.Context, guildId, channelId, userId, m
 					ReqType: utils.GuildMsg,
 				}
 			}
-			replyText := "（添加成功）"
+			replyText := "添加成功"
 			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, replyText)
 			return utils.RetStuct{
 				RetVal: utils.MESSAGE_BLOCK,
@@ -238,11 +240,11 @@ func (price *PricePlugin) Do(ctx *context.Context, guildId, channelId, userId, m
 					ReqType: utils.GuildMsg,
 				}
 			}
-			str6 := strings.Split(str5[1], "#&")
+			str6 := strings.Split(str5[1], "#?")
 			if len(str6) != 2 {
 				err := database.ItemSave("10002", "10002", null.String{}, str5[0], null.NewString(str6[0], true), null.String{}, userId, null.NewTime(time.Now(), true))
 				if err != nil {
-					replyText := "（添加失败）"
+					replyText := "添加失败"
 					log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, replyText)
 
 					return utils.RetStuct{
@@ -253,7 +255,7 @@ func (price *PricePlugin) Do(ctx *context.Context, guildId, channelId, userId, m
 						ReqType: utils.GuildMsg,
 					}
 				}
-				replyText := "（添加成功）"
+				replyText := "添加成功"
 				log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, replyText)
 
 				return utils.RetStuct{
@@ -266,7 +268,7 @@ func (price *PricePlugin) Do(ctx *context.Context, guildId, channelId, userId, m
 			}
 			err := database.ItemSave("10002", "10002", null.String{}, str5[0], null.NewString(str6[0], true), null.NewString(str6[1], true), userId, null.NewTime(time.Now(), true))
 			if err != nil {
-				replyText := "（添加失败）"
+				replyText := "添加失败"
 				log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, replyText)
 
 				return utils.RetStuct{
@@ -277,7 +279,7 @@ func (price *PricePlugin) Do(ctx *context.Context, guildId, channelId, userId, m
 					ReqType: utils.GuildMsg,
 				}
 			}
-			replyText := "（添加成功）"
+			replyText := "添加成功"
 			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, replyText)
 			return utils.RetStuct{
 				RetVal: utils.MESSAGE_BLOCK,

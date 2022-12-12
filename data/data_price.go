@@ -22,12 +22,12 @@ type CuberPrice struct {
 
 func GetItem(guildId, channelId string, item string) (cp CuberPrice, err error) {
 	cp = CuberPrice{}
-	err = Db.QueryRow("select ID, guild_id, channel_id, brand, item, price, shipping, updater, gmt_modified from [kequ5060].[dbo].[guild_price] where guild_id = $1 and item = $2", guildId, item).Scan(&cp.Id, &cp.GuildId, &cp.ChannelId, &cp.Brand, &cp.Item, &cp.Price, &cp.Shipping, &cp.Updater, &cp.GmtModified)
+	err = Db.QueryRow("select ID, guild_id, channel_id, brand, item, price, shipping, updater, gmt_modified from [kequ5060].[dbo].[guild_price] where guild_id = $1 and channel_id = $3 and item = $2", guildId, item, channelId).Scan(&cp.Id, &cp.GuildId, &cp.ChannelId, &cp.Brand, &cp.Item, &cp.Price, &cp.Shipping, &cp.Updater, &cp.GmtModified)
 	return
 }
 
 func GetItems(guildId, channelId string, key string) (cps []CuberPrice, err error) {
-	statment := fmt.Sprintf("select ID, guild_id, channel_id, brand, item, price, shipping, updater, gmt_modified from [kequ5060].[dbo].[guild_price] where guild_id = %s and channel_id = %s item like '%%%s%%'", guildId, channelId, key)
+	statment := fmt.Sprintf("select ID, guild_id, channel_id, brand, item, price, shipping, updater, gmt_modified from [kequ5060].[dbo].[guild_price] where guild_id = %s and channel_id = %s and item like '%%%s%%'", guildId, channelId, key)
 	rows, err := Db.Query(statment)
 	if err != nil {
 		return
@@ -42,7 +42,7 @@ func GetItems(guildId, channelId string, key string) (cps []CuberPrice, err erro
 }
 
 func (cp *CuberPrice) ItemCreate() (err error) {
-	statement := "insert into [kequ5060].[dbo].[guild_price] (guild_id, channel_id, brand, item, price, shipping, updater, gmt_modified) values ($1, $2, $3, $4, $5, $6, $7, $8) select @@identity"
+	statement := "insert into [kequ5060].[dbo].[guild_price] values ($1, $2, $3, $4, $5, $6, $7, $8) select @@identity"
 	stmt, err := Db.Prepare(statement)
 	if err != nil {
 		return
@@ -62,9 +62,10 @@ func (cp *CuberPrice) ItemDeleteById() (err error) {
 	return
 }
 
-func ItemSave(guildId , channelId string, brand null.String, item string, price null.String, shipping null.String, updater string, gmtModified null.Time) (err error) {
+func ItemSave(guildId, channelId string, brand null.String, item string, price null.String, shipping null.String, updater string, gmtModified null.Time) (err error) {
 	cp := CuberPrice{
 		GuildId:     guildId,
+		ChannelId:   channelId,
 		Brand:       brand,
 		Item:        item,
 		Price:       price,
