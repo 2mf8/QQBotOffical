@@ -48,7 +48,7 @@ func (cp *CuberPrice) ItemCreate() (err error) {
 		return
 	}
 	defer stmt.Close()
-	err = stmt.QueryRow(cp.GuildId, cp.ChannelId, cp.ChannelId, cp.Brand, cp.Item, cp.Price, cp.Shipping, cp.Updater, cp.GmtModified).Scan(&cp.Id)
+	err = stmt.QueryRow(cp.GuildId, cp.ChannelId, cp.Brand, cp.Item, cp.Price, cp.Shipping, cp.Updater, cp.GmtModified).Scan(&cp.Id)
 	return
 }
 
