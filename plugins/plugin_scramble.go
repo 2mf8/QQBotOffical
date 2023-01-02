@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/2mf8/QQBotOffical/data"
+	database "github.com/2mf8/QQBotOffical/data"
 	"github.com/2mf8/QQBotOffical/public"
 	"github.com/2mf8/QQBotOffical/utils"
 	log "github.com/sirupsen/logrus"
@@ -14,7 +14,7 @@ import (
 type ScramblePlugin struct {
 }
 
-func (scramble *ScramblePlugin) Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool, priceSearch string) utils.RetStuct {
+func (scramble *ScramblePlugin) Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool, priceSearch string, imgs []string) utils.RetStuct {
 
 	s, b := public.Prefix(msg, ".")
 	if !b {

@@ -17,7 +17,7 @@ import (
 type Competition struct {
 }
 
-func (rep *Competition) Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool, priceSearch string) utils.RetStuct {
+func (rep *Competition) Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool, priceSearch string, imgs []string) utils.RetStuct {
 	var sic []string
 
 	s, b := public.Prefix(msg, ".")
@@ -256,7 +256,6 @@ func (rep *Competition) Do(ctx *context.Context, guildId, channelId, userId, msg
 				si = append(si, "-1")
 			}
 			t := database.ToGetScrambleIndex(si[1])
-			fmt.Println(tgc, t)
 			if t == 0 {
 				if (tgc == "444" && gss.CompContents.Four != "") || (tgc == "555" && gss.CompContents.Five != "") || (tgc == "666" && gss.CompContents.Six != "") || (tgc == "777" && gss.CompContents.Seven != "") || (tgc == "minx" && gss.CompContents.Megaminx != "") {
 					reply := "公式较长，请分批获取\n赛季打乱 [项目] [序号]\n注：序号为1-5"
@@ -527,6 +526,213 @@ func (rep *Competition) Do(ctx *context.Context, guildId, channelId, userId, msg
 				},
 				ReqType: utils.GuildMsg,
 			}
+		}
+	}
+
+	sjcj, b := public.Prefix(s, "赛季成绩")
+	if b {
+		cji := strings.Split(sjcj, " ")
+		v, err := database.CompetitionRead()
+		if err != nil {
+			reply := "赛季获取出错，请联系管理员添加赛季"
+			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, reply)
+			return utils.RetStuct{
+				RetVal: utils.MESSAGE_BLOCK,
+				ReplyMsg: &utils.Msg{
+					Text: reply,
+				},
+				ReqType: utils.GuildMsg,
+			}
+		}
+		session := v.Sessions
+		tgc := database.ToGetScramble(cji[0])
+		if tgc != "" {
+			best := -1
+			average := -1
+			sum := 0
+			gs := public.ConvertGradeToInt(sjcj)
+			if len(gs) < 4 && len(gs) > 0 {
+				minNum := gs[0]
+				if len(gs) == 3 && (tgc == "666" || tgc == "777") {
+					for _, i := range gs {
+						if i < minNum {
+							minNum = i
+						}
+						sum += i
+					}
+					average = sum / 3
+					best = minNum
+				} else {
+					for _, i := range gs {
+						if i < minNum {
+							minNum = i
+						}
+					}
+					best = minNum
+				}
+			}
+			if len(gs) == 4 {
+				minNum := gs[0]
+				for _, i := range gs {
+					if i < minNum {
+						minNum = i
+					}
+					sum += i
+				}
+				best = minNum
+				average = (sum - best) / 3
+			}
+			if len(gs) == 5 {
+				minNum := gs[0]
+				maxNum := gs[0]
+				for _, i := range gs {
+					if i < minNum {
+						minNum = i
+					}
+					if i > maxNum {
+						maxNum = i
+					}
+					sum += i
+				}
+				best = minNum
+				average = (sum - best - maxNum) / 3
+			}
+			err := database.AchievementSave(userId, username, tgc, best, average, session)
+			if err != nil {
+				reply := "成绩保存出错，请联系管理员或稍后重试"
+				fmt.Println(err)
+				log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, reply)
+				return utils.RetStuct{
+					RetVal: utils.MESSAGE_BLOCK,
+					ReplyMsg: &utils.Msg{
+						Text: reply,
+					},
+					ReqType: utils.GuildMsg,
+				}
+			}
+			bt := ""
+			at := ""
+			bm := best / 60000
+			bs := best % 60000 / 1000
+			bms := best % 60000 % 1000
+			am := average / 60000
+			as := average % 60000 / 1000
+			ams := average % 60000 % 1000
+			if bm > 0 {
+				bt = fmt.Sprintf("%d:%d.%d", bm, bs, bms)
+			}
+			if best > -1 {
+				bt = fmt.Sprintf("%d.%d", bs, bms)
+			}
+			if am > 0 {
+				at = fmt.Sprintf("%d:%d.%d", am, as, ams)
+			}
+			if average > -1 {
+				at = fmt.Sprintf("%d.%d", as, ams)
+			}
+			pm := ""
+			bi, ai, err := database.AchievementGetCount(tgc, best, average, session)
+			fmt.Println(bi, ai)
+			if err != nil {
+				fmt.Println(err)
+			}
+			if bi >= 0 && bt != "" {
+				pm += fmt.Sprintf("单次 %d (%s)，", bi+1, bt)
+			}
+			if ai >= 0 && at != "" {
+				pm += fmt.Sprintf("平均 %d (%s)。", ai+1, at)
+			}
+			reply := "成绩上传成功。\n" + username + " (" + userId + ") 在赛季 " + strconv.Itoa(session) + "的项目 " + tgc + " 中获得排名：" + pm + "\n" + "详情(项目+成绩)：\n" + sjcj
+			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, reply)
+			return utils.RetStuct{
+				RetVal: utils.MESSAGE_BLOCK,
+				ReplyMsg: &utils.Msg{
+					Text: reply,
+				},
+				ReqType: utils.GuildMsg,
+			}
+		} else {
+			reply := "格式错误，缺少项目\n格式为\n赛季成绩 [项目] [成绩] [成绩] [成绩] ..."
+			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, reply)
+			return utils.RetStuct{
+				RetVal: utils.MESSAGE_BLOCK,
+				ReplyMsg: &utils.Msg{
+					Text: reply,
+				},
+				ReqType: utils.GuildMsg,
+			}
+		}
+	}
+
+	_, b = public.Prefix(s, "我的成绩")
+	if b {
+		v, err := database.CompetitionRead()
+		if err != nil {
+			reply := "赛季获取出错，请联系管理员添加赛季"
+			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, reply)
+			return utils.RetStuct{
+				RetVal: utils.MESSAGE_BLOCK,
+				ReplyMsg: &utils.Msg{
+					Text: reply,
+				},
+				ReqType: utils.GuildMsg,
+			}
+		}
+		session := v.Sessions
+		as, err := database.AGBUAS(userId, session)
+		if err != nil {
+			reply := "成绩获取出错，请稍后重试"
+			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, reply)
+			return utils.RetStuct{
+				RetVal: utils.MESSAGE_BLOCK,
+				ReplyMsg: &utils.Msg{
+					Text: reply,
+				},
+				ReqType: utils.GuildMsg,
+			}
+		}
+		if len(as) == 0 {
+			reply := "暂无相关成绩"
+			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, reply)
+			return utils.RetStuct{
+				RetVal: utils.MESSAGE_BLOCK,
+				ReplyMsg: &utils.Msg{
+					Text: reply,
+				},
+				ReqType: utils.GuildMsg,
+			}
+		}
+		it := fmt.Sprintf("%s(%s)在赛季%d中的成绩为\n 项目 最好成绩 || 平均成绩", username, userId, session)
+		for _, v := range as {
+			bt := "DNF"
+			at := "DNF"
+			bm := v.Best / 60000
+			bs := v.Best % 60000 / 1000
+			bms := v.Best % 60000 % 1000
+			am := v.Average / 60000
+			as := v.Average % 60000 / 1000
+			ams := v.Average % 60000 % 1000
+			if bm > 0 {
+				bt = fmt.Sprintf("%d:%d.%d", bm, bs, bms)
+			}
+			if v.Best > -1 {
+				bt = fmt.Sprintf("%d.%d", bs, bms)
+			}
+			if am > 0 {
+				at = fmt.Sprintf("%d:%d.%d", am, as, ams)
+			}
+			if v.Average > -1 {
+				at = fmt.Sprintf("%d.%d", as, ams)
+			}
+			it += fmt.Sprintf("\n%s %s || %s", v.Item, bt, at)
+		}
+		log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, it)
+		return utils.RetStuct{
+			RetVal: utils.MESSAGE_BLOCK,
+			ReplyMsg: &utils.Msg{
+				Text: it,
+			},
+			ReqType: utils.GuildMsg,
 		}
 	}
 

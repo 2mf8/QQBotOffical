@@ -275,3 +275,31 @@ func ConvertJinTime(i int) string {
 	timeString = fmt.Sprintf("%v 小时 %v 分钟 %v 秒钟", hour, min, sec)
 	return timeString
 }
+
+func ConvertGradeToInt(s string) (grade []int) {
+	reg1 := regexp.MustCompile(`([0-9]*)(:*)([0-9]+)(\.*)([0-9]*)`)
+	ss := reg1.FindAllString(s, -1)
+	for _, i := range ss {
+		if strings.Contains(i, ".") && !strings.Contains(i, ":") {
+			f, _ := strconv.ParseFloat(i, 32)
+			sf := fmt.Sprintf("%0.3f", f)
+			n, _ := strconv.Atoi(strings.Replace(sf, ".", "", -1))
+			grade = append(grade, n)
+		} else if strings.Contains(i, ".") && strings.Contains(i, ":") {
+			as := strings.Split(i, ":")
+			f, _ := strconv.ParseFloat(as[1], 32)
+			sf := fmt.Sprintf("%0.3f", f)
+			n, _ := strconv.Atoi(strings.Replace(sf, ".", "", -1))
+			n1, _ := strconv.Atoi(as[0])
+			nt := n1*1000*60 + n
+			grade = append(grade, nt)
+		} else {
+			n1, _ := strconv.Atoi(i)
+			if n1 == 222 || n1 == 333 || n1 == 444 || n1 == 555 || n1 == 666 || n1 == 777 || n1 == 1 {
+				continue
+			}
+			grade = append(grade, n1*1000)
+		}
+	}
+	return grade
+}

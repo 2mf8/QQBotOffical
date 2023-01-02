@@ -14,7 +14,7 @@ import (
 type Repeat struct {
 }
 
-func (rep *Repeat) Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool, priceSearch string) utils.RetStuct {
+func (rep *Repeat) Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool, priceSearch string, imgs []string) utils.RetStuct {
 
 	rand.Seed(time.Now().UnixNano())
 	r := rand.Intn(101)

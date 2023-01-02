@@ -34,25 +34,26 @@ type CompOptions struct {
 }
 
 var ScrambleMap = map[string]string{
-	"222":"222",
-	"333":"333",
-	"444":"444",
-	"555":"555",
-	"666":"666",
-	"777":"777",
-	"skewb":"skewb",
-	"pyram":"pyram",
-	"sq1":"sq1",
-	"clock":"clock",
-	"minx":"minx",
+	"222":   "222",
+	"333":   "333",
+	"444":   "444",
+	"555":   "555",
+	"666":   "666",
+	"777":   "777",
+	"skewb": "skewb",
+	"pyram": "pyram",
+	"sq1":   "sq1",
+	"clock": "clock",
+	"minx":  "minx",
+	"333fm": "333fm",
 }
 
 var ScrambleIndexMap = map[string]int{
-	"1":1,
-	"2":2,
-	"3":3,
-	"4":4,
-	"5":5,
+	"1": 1,
+	"2": 2,
+	"3": 3,
+	"4": 4,
+	"5": 5,
 }
 
 // var scrambleItems = []string{"222", "444", "555", "skewb", "pyram", "sq1", "clock", "minx"}
@@ -174,7 +175,7 @@ func (c *CompOptions) CompetitionUpdate(sa []string) (tip string, err error) {
 				c.CompContents.Megaminx = compContents.Megaminx
 			}
 		}
-	}else {
+	} else {
 		return "无新增内容", nil
 	}
 	output, err := json.MarshalIndent(c, "", "\t")
@@ -227,7 +228,6 @@ func JudgeItem(str string, items []string) string {
 	return ""
 }
 
-
 func ToGetScramble(s string) string {
 	tgc, ok := ScrambleMap[s]
 	if !ok {
@@ -243,4 +243,3 @@ func ToGetScrambleIndex(s string) int {
 	}
 	return tgi
 }
-

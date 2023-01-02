@@ -2,11 +2,10 @@ package plugins
 
 import (
 	"context"
-	"regexp"
 	"strings"
 	"time"
 
-	"github.com/2mf8/QQBotOffical/data"
+	database "github.com/2mf8/QQBotOffical/data"
 	"github.com/2mf8/QQBotOffical/public"
 	"github.com/2mf8/QQBotOffical/utils"
 	log "github.com/sirupsen/logrus"
@@ -16,7 +15,7 @@ import (
 type LearnPlugin struct {
 }
 
-func (learnPlugin *LearnPlugin) Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool, priceSearch string) utils.RetStuct {
+func (learnPlugin *LearnPlugin) Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool, priceSearch string, imgs []string) utils.RetStuct {
 
 	s, b := public.Prefix(msg, ".")
 	if !b {
@@ -24,6 +23,7 @@ func (learnPlugin *LearnPlugin) Do(ctx *context.Context, guildId, channelId, use
 			RetVal: utils.MESSAGE_IGNORE,
 		}
 	}
+
 	ggk, _ := database.GetJudgeKeys()
 	containsJudgeKeys := database.Judge(msg, *ggk.JudgekeysSync)
 	if containsJudgeKeys != "" {
@@ -37,12 +37,11 @@ func (learnPlugin *LearnPlugin) Do(ctx *context.Context, guildId, channelId, use
 			ReqType: utils.GuildMsg,
 		}
 	}
-	reg1 := regexp.MustCompile("＃")
-	str1 := strings.TrimSpace(reg1.ReplaceAllString(s, "#"))
-	if public.StartsWith(str1, "#+") && (isBotAdmin || isAdmin) {
+
+	if public.StartsWith(s, "#+") && (isBotAdmin || isAdmin) {
 		suspectedUrl := strings.Split(s, ".")
 		if len(suspectedUrl) > 1 {
-			if suspectedUrl[0] != "" && suspectedUrl[1] != "" {
+			if suspectedUrl[0] != "" && suspectedUrl[1] != "" && !isBotAdmin {
 				msg := "疑似网址(暂不支持网址)，已被拦截"
 				log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, msg)
 				return utils.RetStuct{
@@ -54,7 +53,7 @@ func (learnPlugin *LearnPlugin) Do(ctx *context.Context, guildId, channelId, use
 				}
 			}
 		}
-		str2 := strings.TrimSpace(strings.TrimPrefix(str1, "#+"))
+		str2 := strings.TrimSpace(strings.TrimPrefix(s, "#+"))
 		str3 := strings.Split(str2, "##")
 		if len(str3) != 2 {
 			if strings.TrimSpace(str3[0]) == "" {
@@ -101,7 +100,14 @@ func (learnPlugin *LearnPlugin) Do(ctx *context.Context, guildId, channelId, use
 				ReqType: utils.GuildMsg,
 			}
 		}
-		err := database.LearnSave(strings.TrimSpace(str3[0]), guildId, channelId, userId, null.NewString(str3[1], true), time.Now(), true)
+		iua := ""
+		if len(imgs) > 0 {
+			for _, iu := range imgs {
+				iua += "#url#" + iu
+			}
+		}
+		ans := str3[1] + iua
+		err := database.LearnSave(strings.TrimSpace(str3[0]), guildId, channelId, userId, null.NewString(ans, true), time.Now(), true)
 		if err != nil {
 			replyText := "添加失败"
 			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, replyText)
@@ -123,10 +129,10 @@ func (learnPlugin *LearnPlugin) Do(ctx *context.Context, guildId, channelId, use
 			ReqType: utils.GuildMsg,
 		}
 	}
-	if public.StartsWith(str1, "++") && isBotAdmin {
+	if public.StartsWith(s, "++") && isBotAdmin {
 		suspectedUrl := strings.Split(s, ".")
 		if len(suspectedUrl) > 1 {
-			if suspectedUrl[0] != "" && suspectedUrl[1] != "" {
+			if suspectedUrl[0] != "" && suspectedUrl[1] != "" && !isBotAdmin {
 				msg := "疑似网址(暂不支持网址)，已被拦截"
 				log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, msg)
 				return utils.RetStuct{
@@ -138,7 +144,7 @@ func (learnPlugin *LearnPlugin) Do(ctx *context.Context, guildId, channelId, use
 				}
 			}
 		}
-		str2 := strings.TrimSpace(strings.TrimPrefix(str1, "++"))
+		str2 := strings.TrimSpace(strings.TrimPrefix(s, "++"))
 		str3 := strings.Split(str2, "##")
 		if len(str3) != 2 {
 			if strings.TrimSpace(str3[0]) == "" {
@@ -185,7 +191,14 @@ func (learnPlugin *LearnPlugin) Do(ctx *context.Context, guildId, channelId, use
 				ReqType: utils.GuildMsg,
 			}
 		}
-		err := database.LearnSave(strings.TrimSpace(str3[0]), "sys", "sys", userId, null.NewString(str3[1], true), time.Now(), true)
+		iua := ""
+		if len(imgs) > 0 {
+			for _, iu := range imgs {
+				iua += "#url#" + iu
+			}
+		}
+		ans := str3[1] + iua
+		err := database.LearnSave(strings.TrimSpace(str3[0]), "sys", "sys", userId, null.NewString(ans, true), time.Now(), true)
 		if err != nil {
 			replyText := "系统问答添加失败"
 			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, replyText)
@@ -221,9 +234,29 @@ func (learnPlugin *LearnPlugin) Do(ctx *context.Context, guildId, channelId, use
 	learn_get, err := database.LearnGet(guildId, channelId, strings.TrimSpace(s))
 	//log.Println(learn_get.LearnSync.Answer.String,"ceshil", err)
 	if err != nil || learn_get.LearnSync.Answer.String == "" {
+		imgs := []string{}
 		sys_learn_get, _ := database.LearnGet("sys", "sys", strings.TrimSpace(s))
 		if sys_learn_get.LearnSync.Answer.String != "" {
 			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, sys_learn_get.LearnSync.Answer.String)
+			if public.Contains(sys_learn_get.LearnSync.Answer.String, "#url#") {
+				anst := ""
+				anscontainimg := strings.Split(sys_learn_get.LearnSync.Answer.String, "#url#")
+				for i, aci := range anscontainimg {
+					if i > 0 {
+						imgs = append(imgs, aci)
+					} else {
+						anst += aci
+					}
+				}
+				return utils.RetStuct{
+					RetVal: utils.MESSAGE_BLOCK,
+					ReplyMsg: &utils.Msg{
+						Text:   anst,
+						Images: imgs,
+					},
+					ReqType: utils.GuildMsg,
+				}
+			}
 			return utils.RetStuct{
 				RetVal: utils.MESSAGE_BLOCK,
 				ReplyMsg: &utils.Msg{
@@ -235,6 +268,25 @@ func (learnPlugin *LearnPlugin) Do(ctx *context.Context, guildId, channelId, use
 	}
 	if learn_get.LearnSync.Answer.String != "" {
 		log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, learn_get.LearnSync.Answer.String)
+		if public.Contains(learn_get.LearnSync.Answer.String, "#url#") {
+			anst := ""
+			anscontainimg := strings.Split(learn_get.LearnSync.Answer.String, "#url#")
+			for i, aci := range anscontainimg {
+				if i > 0 {
+					imgs = append(imgs, aci)
+				} else {
+					anst += aci
+				}
+			}
+			return utils.RetStuct{
+				RetVal: utils.MESSAGE_BLOCK,
+				ReplyMsg: &utils.Msg{
+					Text:   anst,
+					Images: imgs,
+				},
+				ReqType: utils.GuildMsg,
+			}
+		}
 		return utils.RetStuct{
 			RetVal: utils.MESSAGE_BLOCK,
 			ReplyMsg: &utils.Msg{

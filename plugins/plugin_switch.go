@@ -15,7 +15,7 @@ import (
 type BotSwitch struct {
 }
 
-func (botSwitch *BotSwitch) Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool, priceSearch string) utils.RetStuct {
+func (botSwitch *BotSwitch) Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool, priceSearch string, imgs []string) utils.RetStuct {
 
 	s, b := public.Prefix(msg, ".")
 	if !b {

@@ -32,13 +32,14 @@ type RetStuct struct {
 }
 
 type Msg struct {
-	Text  string
-	At    bool
-	Image string
+	Text   string
+	At     bool
+	Image  string
+	Images []string
 }
 
 type Plugin interface {
-	Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool, priceSearch string) (retStuct RetStuct)
+	Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool, priceSearch string, attachments []string) (retStuct RetStuct)
 }
 
 var PluginSet map[string]Plugin

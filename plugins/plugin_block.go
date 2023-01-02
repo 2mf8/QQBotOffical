@@ -15,7 +15,7 @@ import (
 
 type Block struct{}
 
-func (block *Block) Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool, priceSearch string) utils.RetStuct {
+func (block *Block) Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool, priceSearch string, imgs []string) utils.RetStuct {
 
 	ispblock, _ := database.PBlockGet(guildId, userId)
 	if ispblock.PBlockSync.UserId == userId && ispblock.PBlockSync.IsPBlock {

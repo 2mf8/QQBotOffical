@@ -2,7 +2,6 @@ package plugins
 
 import (
 	"context"
-	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -19,7 +18,7 @@ import (
 type PricePlugin struct {
 }
 
-func (price *PricePlugin) Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool, priceSearch string) utils.RetStuct {
+func (price *PricePlugin) Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool, priceSearch string, imgs []string) utils.RetStuct {
 
 	reg1 := regexp.MustCompile("％")
 	reg2 := regexp.MustCompile("＃")
@@ -103,7 +102,6 @@ func (price *PricePlugin) Do(ctx *context.Context, guildId, channelId, userId, m
 			if len(str6) != 2 {
 				err := database.ItemSave("10001", "10001", null.String{}, str5[0], null.NewString(str6[0], true), null.String{}, userId, null.NewTime(time.Now(), true))
 				if err != nil {
-					fmt.Println(err)
 					replyText := "添加失败"
 					log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, replyText)
 

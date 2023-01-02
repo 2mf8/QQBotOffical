@@ -49,9 +49,11 @@ func main() {
 	// 监听哪类事件就需要实现哪类的 handler，定义：websocket/event_handler.go
 	var message event.MessageEventHandler = func(event *dto.WSPayload, data *dto.WSMessageData) error {
 		imgStr := ""
+		imgs := []string{}
 		if len(data.Attachments) != 0 {
 			for _, imgUrl := range data.Attachments {
 				imgStr += "<img:\"" + imgUrl.URL + "\">"
+				imgs = append(imgs, imgUrl.URL)
 			}
 		}
 		guildId := data.GuildID               // 频道Id
@@ -78,6 +80,7 @@ func main() {
 		rawMsg = strings.TrimSpace(reg2.ReplaceAllString(rawMsg, "#"))
 		rawMsg = strings.TrimSpace(reg3.ReplaceAllString(rawMsg, "?"))
 		rawMsg = strings.TrimSpace(reg4.ReplaceAllString(rawMsg, ""))
+
 		if public.Contains(msg, "<@!13970278473675774808>") {
 			if !public.StartsWith(rawMsg, "%") {
 				rawMsg = "." + rawMsg
@@ -90,6 +93,10 @@ func main() {
 			} else {
 				api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Content: "机器人不是管理员"})
 			}
+			//api.DeleteGuildMember()
+		}
+		if msg == "url" {
+			api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Image: "https://gchat.qpic.cn/qmeetpic/14205791670163322/32310159-2985743808-30191304C37B8F47654B38834397C2BF/0/"})
 			//api.DeleteGuildMember()
 		}
 		channel, err := api.Channel(ctx, channelId)
@@ -114,7 +121,7 @@ func main() {
 			if intent > 0 {
 				continue
 			}
-			retStuct := utils.PluginSet[i].Do(&ctx, guildId, channelId, userId, rawMsg, msgId, username, avatar, srcGuildID, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin, priceSearch)
+			retStuct := utils.PluginSet[i].Do(&ctx, guildId, channelId, userId, rawMsg, msgId, username, avatar, srcGuildID, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin, priceSearch, imgs)
 			if retStuct.RetVal == utils.MESSAGE_BLOCK {
 				if retStuct.ReqType == utils.GuildMsg {
 					if retStuct.ReplyMsg != nil {
@@ -129,7 +136,21 @@ func main() {
 								MsgID:   data.ID,
 							}
 						}
+						if len(retStuct.ReplyMsg.Images) != 0 {
+							newMsg = &dto.MessageToCreate{
+								Content: retStuct.ReplyMsg.Text,
+								Image:   "https://" + retStuct.ReplyMsg.Images[0],
+								MsgID:   data.ID,
+							}
+						}
 						api.PostMessage(ctx, channelId, newMsg)
+						if len(retStuct.ReplyMsg.Images) == 2 {
+							api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Image: "https://" + retStuct.ReplyMsg.Images[1]})
+						}
+						if len(retStuct.ReplyMsg.Images) >= 3 {
+							api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Image: "https://" + retStuct.ReplyMsg.Images[1]})
+							api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Image: "https://" + retStuct.ReplyMsg.Images[2]})
+						}
 					}
 					break
 				}

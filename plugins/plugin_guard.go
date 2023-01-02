@@ -14,7 +14,7 @@ import (
 type Guard struct {
 }
 
-func (guard *Guard) Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool, priceSearch string) utils.RetStuct {
+func (guard *Guard) Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool, priceSearch string, imgs []string) utils.RetStuct {
 	if !botIsAdmin {
 		return utils.RetStuct{
 			RetVal: utils.MESSAGE_IGNORE,
@@ -50,7 +50,7 @@ func (guard *Guard) Do(ctx *context.Context, guildId, channelId, userId, msg, ms
 		}
 	}
 
-	if public.StartsWith(msg, ".取消拦截") && isBotAdmin {
+	if public.StartsWith(msg, ".取消拦截") && (isAdmin || isBotAdmin) {
 		vocabulary := strings.TrimPrefix(msg, ".取消拦截")
 		content := strings.Split(vocabulary, " ")
 		ggk.JudgeKeysDelete(content...)
