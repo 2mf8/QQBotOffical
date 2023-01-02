@@ -712,17 +712,17 @@ func (rep *Competition) Do(ctx *context.Context, guildId, channelId, userId, msg
 			am := v.Average / 60000
 			as := v.Average % 60000 / 1000
 			ams := v.Average % 60000 % 1000
+			if v.Best > -1 && bm == 0 {
+				bt = fmt.Sprintf("%d.%d", bs, bms)
+			}
 			if bm > 0 {
 				bt = fmt.Sprintf("%d:%d.%d", bm, bs, bms)
 			}
-			if v.Best > -1 {
-				bt = fmt.Sprintf("%d.%d", bs, bms)
+			if v.Average > -1 && am == 0{
+				at = fmt.Sprintf("%d.%d", as, ams)
 			}
 			if am > 0 {
 				at = fmt.Sprintf("%d:%d.%d", am, as, ams)
-			}
-			if v.Average > -1 {
-				at = fmt.Sprintf("%d.%d", as, ams)
 			}
 			it += fmt.Sprintf("\n%s %s || %s", v.Item, bt, at)
 		}
