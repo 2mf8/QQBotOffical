@@ -610,25 +610,25 @@ func (rep *Competition) Do(ctx *context.Context, guildId, channelId, userId, msg
 					ReqType: utils.GuildMsg,
 				}
 			}
-			bt := ""
-			at := ""
+			bt := "DNF"
+			at := "DNF"
 			bm := best / 60000
 			bs := best % 60000 / 1000
 			bms := best % 60000 % 1000
 			am := average / 60000
 			as := average % 60000 / 1000
 			ams := average % 60000 % 1000
+			if best > -1 && bm == 0 {
+				bt = fmt.Sprintf("%d.%d", bs, bms)
+			}
 			if bm > 0 {
 				bt = fmt.Sprintf("%d:%d.%d", bm, bs, bms)
 			}
-			if best > -1 {
-				bt = fmt.Sprintf("%d.%d", bs, bms)
+			if average > -1 && am == 0{
+				at = fmt.Sprintf("%d.%d", as, ams)
 			}
 			if am > 0 {
 				at = fmt.Sprintf("%d:%d.%d", am, as, ams)
-			}
-			if average > -1 {
-				at = fmt.Sprintf("%d.%d", as, ams)
 			}
 			pm := ""
 			bi, ai, err := database.AchievementGetCount(tgc, best, average, session)
@@ -636,10 +636,10 @@ func (rep *Competition) Do(ctx *context.Context, guildId, channelId, userId, msg
 			if err != nil {
 				fmt.Println(err)
 			}
-			if bi >= 0 && bt != "" {
+			if bi >= 0 && bt != "DNF" {
 				pm += fmt.Sprintf("单次 %d (%s)，", bi+1, bt)
 			}
-			if ai >= 0 && at != "" {
+			if ai >= 0 && at != "DNF" {
 				pm += fmt.Sprintf("平均 %d (%s)。", ai+1, at)
 			}
 			reply := "成绩上传成功。\n" + username + " (" + userId + ") 在赛季 " + strconv.Itoa(session) + "的项目 " + tgc + " 中获得排名：" + pm + "\n" + "详情(项目+成绩)：\n" + sjcj
