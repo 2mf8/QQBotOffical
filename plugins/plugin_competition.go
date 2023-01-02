@@ -622,7 +622,7 @@ func (rep *Competition) Do(ctx *context.Context, guildId, channelId, userId, msg
 				bt = fmt.Sprintf("%d.%d", bs, bms)
 			}
 			if bm > 0 {
-				if bm < 10 {
+				if bs < 10 {
 					bt = fmt.Sprintf("%d:0%d.%d", bm, bs, bms)
 				}else{
 					bt = fmt.Sprintf("%d:%d.%d", bm, bs, bms)
@@ -632,7 +632,7 @@ func (rep *Competition) Do(ctx *context.Context, guildId, channelId, userId, msg
 				at = fmt.Sprintf("%d.%d", as, ams)
 			}
 			if am > 0 {
-				if am <10 {
+				if as <10 {
 					at = fmt.Sprintf("%d:0%d.%d", am, as, ams)
 				}else{
 					at = fmt.Sprintf("%d:%d.%d", am, as, ams)
@@ -724,7 +724,7 @@ func (rep *Competition) Do(ctx *context.Context, guildId, channelId, userId, msg
 				bt = fmt.Sprintf("%d.%d", bs, bms)
 			}
 			if bm > 0 {
-				if bm < 10 {
+				if bs < 10 {
 					bt = fmt.Sprintf("%d:0%d.%d", bm, bs, bms)
 				}else{
 					bt = fmt.Sprintf("%d:%d.%d", bm, bs, bms)
@@ -734,7 +734,7 @@ func (rep *Competition) Do(ctx *context.Context, guildId, channelId, userId, msg
 				at = fmt.Sprintf("%d.%d", as, ams)
 			}
 			if am > 0 {
-				if am <10 {
+				if as <10 {
 					at = fmt.Sprintf("%d:0%d.%d", am, as, ams)
 				}else{
 					at = fmt.Sprintf("%d:%d.%d", am, as, ams)
