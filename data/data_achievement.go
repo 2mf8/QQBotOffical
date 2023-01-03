@@ -23,8 +23,8 @@ func (a *Achievement) AchievementCreate() (err error) {
 	return
 }
 
-func (a *Achievement) AchievementUpdate(best, average int) (err error) {
-	_, err = Db.Exec("update [kequ5060].[dbo].[guild_achievement] set user_id = $2, user_name = $3, item = $4, best = $5, average = $6, session = $7 where Id = $1", a.Id, a.UserId, a.UserName, a.Item, best, average, a.Session)
+func (a *Achievement) AchievementUpdate(username string, best, average int) (err error) {
+	_, err = Db.Exec("update [kequ5060].[dbo].[guild_achievement] set user_id = $2, user_name = $3, item = $4, best = $5, average = $6, session = $7 where Id = $1", a.Id, a.UserId, username, a.Item, best, average, a.Session)
 	return
 }
 
@@ -43,29 +43,30 @@ func AchievementSave(userId, userName, item string, best, average, session int) 
 		return
 	}
 	if a_get.Best == -1 && a_get.Average == -1 {
-		err = a_get.AchievementUpdate(best, average)
+		err = a_get.AchievementUpdate(userName, best, average)
 		return
 	}
 	if a_get.Best == -1 {
-		err = a_get.AchievementUpdate(best, a_get.Average)
+		err = a_get.AchievementUpdate(userName, best, a_get.Average)
 		return
 	}
 	if a_get.Average == -1 {
-		err = a_get.AchievementUpdate(a_get.Best, average)
+		err = a_get.AchievementUpdate(userName, a_get.Best, average)
 		return
 	}
-	if best < a_get.Best && average < a_get.Average{
-		err = a_get.AchievementUpdate(best, average)
+	if best < a_get.Best && average < a_get.Average {
+		err = a_get.AchievementUpdate(userName, best, average)
 		return
 	}
-	if best < a_get.Best{
-		err = a_get.AchievementUpdate(best, a_get.Average)
+	if best < a_get.Best {
+		err = a_get.AchievementUpdate(userName, best, a_get.Average)
 		return
 	}
-	if average < a_get.Average{
-		err = a_get.AchievementUpdate(a_get.Best, average)
+	if average < a_get.Average {
+		err = a_get.AchievementUpdate(userName, a_get.Best, average)
 		return
 	}
+	err = a_get.AchievementUpdate(userName, a_get.Best, a_get.Average)
 	return
 }
 
