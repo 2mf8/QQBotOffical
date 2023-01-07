@@ -90,7 +90,7 @@ func ADBUAIAS(userId, item string, session int) (err error) {
 
 // AchievementGetByUserIdAndSession
 func AGBUAS(userId string, session int) (as []Achievement, err error) {
-	statment := fmt.Sprintf("select Id, user_id, user_name, item, best, average, session from [kequ5060].[dbo].[guild_achievement] where user_id = %s and session = %d", userId, session)
+	statment := fmt.Sprintf("select Id, user_id, user_name, item, best, average, session from [kequ5060].[dbo].[guild_achievement] where user_id = '%s' and session = %d and best > -1", userId, session)
 	rows, err := Db.Query(statment)
 	if err != nil {
 		return
@@ -107,8 +107,26 @@ func AGBUAS(userId string, session int) (as []Achievement, err error) {
 // AchievementGetByItemAndSessionOrderByBestAsc
 // desc 大 → 小
 // asc 小 → 大
-func AGBIASOBBA(item string, session int) (as []Achievement, err error) {
-	statment := fmt.Sprintf("select Id, user_id, user_name, item, best, average, session from [kequ5060].[dbo].[guild_achievement] where item = %s and session = %d and best > -1 order by best asc", item, session)
+func AGBIASOBBA(item string, session int) (bs []Achievement, err error) {
+	statment := fmt.Sprintf("select Id, user_id, user_name, item, best, average, session from [kequ5060].[dbo].[guild_achievement] where item = '%s' and session = %d and best > -1 order by best asc", item, session)
+	rows, err := Db.Query(statment)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		b := Achievement{}
+		err = rows.Scan(&b.Id, &b.UserId, &b.UserName, &b.Item, &b.Best, &b.Average, &b.Session)
+		bs = append(bs, b)
+	}
+	return
+}
+
+// AchievementGetByItemAndSessionOrderByAverageAsc
+// desc 大 → 小
+// asc 小 → 大
+func AGBIASOBAA(item string, session int) (as []Achievement, err error) {
+	statment := fmt.Sprintf("select Id, user_id, user_name, item, best, average, session from [kequ5060].[dbo].[guild_achievement] where item = '%s' and session = %d and average > -1 order by average asc", item, session)
 	rows, err := Db.Query(statment)
 	if err != nil {
 		return
@@ -122,11 +140,29 @@ func AGBIASOBBA(item string, session int) (as []Achievement, err error) {
 	return
 }
 
-// AchievementGetByItemAndSessionOrderByAverageAsc
+// AchievementGetBySessionOrderByItemAscAndBestAsc
 // desc 大 → 小
 // asc 小 → 大
-func AGBIASOBAA(item string, session int) (as []Achievement, err error) {
-	statment := fmt.Sprintf("select Id, user_id, user_name, item, best, average, session from [kequ5060].[dbo].[guild_achievement] where item = %s and session = %d and average > -1 order by average asc", item, session)
+func AGBSOBIAABA(session int) (as []Achievement, err error) {
+	statment := fmt.Sprintf("select Id, user_id, user_name, item, best, average, session from [kequ5060].[dbo].[guild_achievement] where session = %d and best > -1 order by item asc, best asc", session)
+	rows, err := Db.Query(statment)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		a := Achievement{}
+		err = rows.Scan(&a.Id, &a.UserId, &a.UserName, &a.Item, &a.Best, &a.Average, &a.Session)
+		as = append(as, a)
+	}
+	return
+}
+
+// AchievementGetBySessionOrderByItemAscAndAverageAsc
+// desc 大 → 小
+// asc 小 → 大
+func AGBSOBIAAAA(session int) (as []Achievement, err error) {
+	statment := fmt.Sprintf("select Id, user_id, user_name, item, best, average, session from [kequ5060].[dbo].[guild_achievement] where session = %d and average > -1 order by item asc, average asc", session)
 	rows, err := Db.Query(statment)
 	if err != nil {
 		return
@@ -143,7 +179,7 @@ func AGBIASOBAA(item string, session int) (as []Achievement, err error) {
 func AchievementGetCount(item string, best, average, session int) (i, j int, err error) {
 	i = 0
 	j = 0
-	statment := fmt.Sprintf("select Id, user_id, user_name, item, best, average, session from [kequ5060].[dbo].[guild_achievement] where item = %s and session = %d", item, session)
+	statment := fmt.Sprintf("select Id, user_id, user_name, item, best, average, session from [kequ5060].[dbo].[guild_achievement] where item = '%s' and session = %d", item, session)
 	rows, err := Db.Query(statment)
 	if err != nil {
 		return
@@ -160,4 +196,36 @@ func AchievementGetCount(item string, best, average, session int) (i, j int, err
 		}
 	}
 	return
+}
+
+func BestAndAverageTimeConvert(b, a int) (bc, ac string) {
+	bt := "DNF"
+	at := "DNF"
+	bm := b / 60000
+	bs := b % 60000 / 1000
+	bms := b % 60000 % 1000
+	am := a / 60000
+	as := a % 60000 / 1000
+	ams := a % 60000 % 1000
+	if b > -1 && bm == 0 {
+		bt = fmt.Sprintf("%d.%d", bs, bms)
+	}
+	if bm > 0 {
+		if bs < 10 {
+			bt = fmt.Sprintf("%d:0%d.%d", bm, bs, bms)
+		} else {
+			bt = fmt.Sprintf("%d:%d.%d", bm, bs, bms)
+		}
+	}
+	if a > -1 && am == 0 {
+		at = fmt.Sprintf("%d.%d", as, ams)
+	}
+	if am > 0 {
+		if as < 10 {
+			at = fmt.Sprintf("%d:0%d.%d", am, as, ams)
+		} else {
+			at = fmt.Sprintf("%d:%d.%d", am, as, ams)
+		}
+	}
+	return bt, at
 }

@@ -27,7 +27,7 @@ func GetItem(guildId, channelId string, item string) (cp CuberPrice, err error) 
 }
 
 func GetItems(guildId, channelId string, key string) (cps []CuberPrice, err error) {
-	statment := fmt.Sprintf("select ID, guild_id, channel_id, brand, item, price, shipping, updater, gmt_modified from [kequ5060].[dbo].[guild_price] where guild_id = %s and channel_id = %s and item like '%%%s%%'", guildId, channelId, key)
+	statment := fmt.Sprintf("select ID, guild_id, channel_id, brand, item, price, shipping, updater, gmt_modified from [kequ5060].[dbo].[guild_price] where guild_id = '%s' and channel_id = '%s' and item like '%%%s%%'", guildId, channelId, key)
 	rows, err := Db.Query(statment)
 	if err != nil {
 		return

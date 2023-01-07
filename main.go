@@ -76,10 +76,13 @@ func main() {
 		reg2 := regexp.MustCompile("＃")
 		reg3 := regexp.MustCompile("？")
 		reg4 := regexp.MustCompile("/")
+		// ．
+		reg5 := regexp.MustCompile("．")
 		rawMsg = strings.TrimSpace(reg1.ReplaceAllString(rawMsg, "%"))
 		rawMsg = strings.TrimSpace(reg2.ReplaceAllString(rawMsg, "#"))
 		rawMsg = strings.TrimSpace(reg3.ReplaceAllString(rawMsg, "?"))
 		rawMsg = strings.TrimSpace(reg4.ReplaceAllString(rawMsg, ""))
+		rawMsg = strings.TrimSpace(reg5.ReplaceAllString(rawMsg, "."))
 
 		if public.Contains(msg, "<@!13970278473675774808>") {
 			if !public.StartsWith(rawMsg, "%") {
