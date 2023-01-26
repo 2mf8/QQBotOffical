@@ -68,6 +68,7 @@ func main() {
 		isDirectMessage := data.DirectMessage // 是否是私信
 		roles := data.Member.Roles
 		isAdmin := public.IsAdmin(roles)
+		isCompAdmin := public.IsCompAdmin(roles)
 		br, _ := api.GuildMember(ctx, guildId, "13970278473675774808")
 		botIsAdmin := public.IsAdmin(br.Roles)
 		isBotAdmin := public.IsBotAdmin(userId)
@@ -81,7 +82,9 @@ func main() {
 		rawMsg = strings.TrimSpace(reg1.ReplaceAllString(rawMsg, "%"))
 		rawMsg = strings.TrimSpace(reg2.ReplaceAllString(rawMsg, "#"))
 		rawMsg = strings.TrimSpace(reg3.ReplaceAllString(rawMsg, "?"))
-		rawMsg = strings.TrimSpace(reg4.ReplaceAllString(rawMsg, ""))
+		if !isBotAdmin {
+			rawMsg = strings.TrimSpace(reg4.ReplaceAllString(rawMsg, ""))
+		}
 		rawMsg = strings.TrimSpace(reg5.ReplaceAllString(rawMsg, "."))
 
 		if public.Contains(msg, "<@!13970278473675774808>") {
@@ -89,6 +92,31 @@ func main() {
 				rawMsg = "." + rawMsg
 			}
 		}
+
+		if (isCompAdmin || isBotAdmin) && public.StartsWith(rawMsg, "传") {
+			if public.Contains(rawMsg, ".") {
+				api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Content: "成功，已确认赛季管理员或机器人管理身份"})
+			} else {
+				api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Content: rawMsg})
+			}
+		}
+
+		if isBotAdmin && public.StartsWith(rawMsg, "转") {
+			rawMsg, _ = public.Prefix(rawMsg, "转")
+			if rawMsg != "" {
+				if public.Contains(rawMsg, ".") {
+					api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Content: "成功，已确认机器人管理身份"})
+				} else {
+					api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Content: rawMsg})
+				}
+			}
+		}
+
+		if (isCompAdmin || isBotAdmin) && public.StartsWith(rawMsg, ".假成绩删除") {
+			rawMsg = ".$" + rawMsg
+			rawMsg = strings.TrimSpace(strings.ReplaceAll(rawMsg, "$.", "$"))
+		}
+
 		fmt.Println("管理员？", isAdmin, public.IsAdmin(br.Roles)) // 消息发送者角色
 		if msg == "机器人权限确认" {
 			if public.IsAdmin(br.Roles) {
@@ -98,10 +126,172 @@ func main() {
 			}
 			//api.DeleteGuildMember()
 		}
-		if msg == "url" {
-			api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Image: "https://gchat.qpic.cn/qmeetpic/14205791670163322/32310159-2985743808-30191304C37B8F47654B38834397C2BF/0/"})
+
+		/*if msg == "kb" {
+			md := []*dto.MarkdownParams{
+				{Key: "img_url_theme", Values: []string{
+					"https://www.2mf8.cn/image/sjpm.jpg",
+				}},
+				{Key: "rank_desc", Values: []string{"赛季1 项目 222 最佳成绩 Top 1-4"}},
+				{Key: "img_url_1", Values: []string{"https://qqchannel-profile-1251316161.file.myqcloud.com/1654847790f6890421f8050c6d?t=1662981639"}},
+				{Key: "ordinal_grade_and_nickname_1", Values: []string{"1 25.32 爱魔方吧"}},
+				{Key: "img_url_2", Values: []string{"https://qqchannel-profile-1251316161.file.myqcloud.com/1654847790f6890421f8050c6d?t=1662981639"}},
+				{Key: "ordinal_grade_and_nickname_2", Values: []string{"2 25.32 爱魔方吧测试"}},
+				{Key: "img_url_3", Values: []string{"https://qqchannel-profile-1251316161.file.myqcloud.com/1654847790f6890421f8050c6d?t=1662981639"}},
+				{Key: "ordinal_grade_and_nickname_3", Values: []string{"3 25.32 3爱魔方吧"}},
+				{Key: "img_url_4", Values: []string{"https://qqchannel-profile-1251316161.file.myqcloud.com/1654847790f6890421f8050c6d?t=1662981639"}},
+				{Key: "ordinal_grade_and_nickname_4", Values: []string{"4 25.32 爱魔方吧4"}},
+			}
+			kb := keyboard.CustomKeyboard{
+				Rows: []*keyboard.Row{
+					{
+						Buttons: []*keyboard.Button{
+							{
+								ID: "1",
+								RenderData: &keyboard.RenderData{
+									Label:        "赛季信息",
+									VisitedLabel: "↑赛季信息",
+									Style:        0,
+								},
+								Action: &keyboard.Action{
+									Type: keyboard.ActionTypeAtBot,
+									Permission: &keyboard.Permission{
+										Type: keyboard.PermissionTypAll,
+									},
+									Data:                 "赛季信息",
+									AtBotShowChannelList: false,
+								},
+							},
+							{
+								ID: "2",
+								RenderData: &keyboard.RenderData{
+									Label:        "我的成绩",
+									VisitedLabel: "↑我的成绩",
+									Style:        0,
+								},
+								Action: &keyboard.Action{
+									Type: keyboard.ActionTypeAtBot,
+									Permission: &keyboard.Permission{
+										Type: keyboard.PermissionTypAll,
+									},
+									Data:                 "我的成绩",
+									AtBotShowChannelList: false,
+								},
+							},
+						},
+					},
+					{
+						Buttons: []*keyboard.Button{
+							{
+								ID: "3",
+								RenderData: &keyboard.RenderData{
+									Label:        "赛季擂主",
+									VisitedLabel: "↑赛季擂主",
+									Style:        0,
+								},
+								Action: &keyboard.Action{
+									Type: keyboard.ActionTypeAtBot,
+									Permission: &keyboard.Permission{
+										Type: keyboard.PermissionTypAll,
+									},
+									Data:                 "赛季擂主",
+									AtBotShowChannelList: false,
+								},
+							},
+							{
+								ID: "4",
+								RenderData: &keyboard.RenderData{
+									Label:        "使用说明",
+									VisitedLabel: "↑使用说明",
+									Style:        0,
+								},
+								Action: &keyboard.Action{
+									Type: keyboard.ActionTypeURL,
+									Permission: &keyboard.Permission{
+										Type: keyboard.PermissionTypAll,
+									},
+									Data:                 "https://www.2mf8.cn/tag/",
+									AtBotShowChannelList: false,
+								},
+							},
+						},
+					},
+					{
+						Buttons: []*keyboard.Button{
+							{
+								ID: "5",
+								RenderData: &keyboard.RenderData{
+									Label:        "赛季打乱333",
+									VisitedLabel: "↑赛季打乱333",
+									Style:        0,
+								},
+								Action: &keyboard.Action{
+									Type: keyboard.ActionTypeCallback,
+									Permission: &keyboard.Permission{
+										Type: keyboard.PermissionTypAll,
+									},
+									Data:                 ".赛季打乱333",
+									AtBotShowChannelList: false,
+								},
+							},
+						},
+					},
+					{
+						Buttons: []*keyboard.Button{
+							{
+								ID: "6",
+								RenderData: &keyboard.RenderData{
+									Label:        "赛季打乱333第一个",
+									VisitedLabel: "↑赛季打乱333",
+									Style:        0,
+								},
+								Action: &keyboard.Action{
+									Type: keyboard.ActionTypeCallback,
+									Permission: &keyboard.Permission{
+										Type: keyboard.PermissionTypAll,
+									},
+									Data:                 ".赛季打乱333第一个",
+									AtBotShowChannelList: false,
+								},
+							},
+						},
+					},
+				},
+			}
+			fmt.Printf("按钮 %v", kb.Rows)
+			api.PostMessage(ctx, channelId, &dto.MessageToCreate{Markdown: &dto.Markdown{TemplateID: "101981675_1674092012", Params: md}, Keyboard: &keyboard.MessageKeyboard{
+				ID: "101981675_1674175840",
+			},
+			/*Keyboard: &keyboard.MessageKeyboard{
+				ID: "",
+				Content: &keyboard.CustomKeyboard{
+					Rows: []*keyboard.Row{
+						{
+							Buttons: []*keyboard.Button{
+								{
+									ID: "",
+									RenderData: &keyboard.RenderData{
+										Label: "测试",
+									},
+									Action: &keyboard.Action{
+										Type: keyboard.ActionTypeCallback,
+										Permission: &keyboard.Permission{
+											Type: keyboard.PermissionTypAll,
+										},
+										ClickLimit: 1000,
+										Data: "",
+										AtBotShowChannelList: true,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			})
+			//fmt.Println("测试",dm, "错误", err)
 			//api.DeleteGuildMember()
-		}
+		}*/
 		channel, err := api.Channel(ctx, channelId)
 		if err != nil {
 			log.Warnf("获取子频道信息出错， err = %+v", err)

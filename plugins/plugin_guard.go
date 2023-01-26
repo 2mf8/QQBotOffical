@@ -66,7 +66,7 @@ func (guard *Guard) Do(ctx *context.Context, guildId, channelId, userId, msg, ms
 	}
 
 	containsJudgeKeys := database.Judge(msg, *ggk.JudgekeysSync)
-	if containsJudgeKeys != "" {
+	if containsJudgeKeys != "" && !isBotAdmin {
 		if isAdmin {
 			msg := "消息触发守卫，已被拦截"
 			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, msg)

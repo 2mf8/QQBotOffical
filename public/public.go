@@ -68,6 +68,15 @@ func IsAdmin(roles []string) bool {
 	return false
 }
 
+func IsCompAdmin(roles []string) bool {
+	for _, role := range roles {
+		if role == "13818102" {
+			return true
+		}
+	}
+	return false
+}
+
 func TbotConf() (c PluginConfig, err error) {
 	_, err = toml.DecodeFile("conf.toml", config.Conf)
 	pc := PluginConfig{

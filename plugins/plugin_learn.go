@@ -26,7 +26,7 @@ func (learnPlugin *LearnPlugin) Do(ctx *context.Context, guildId, channelId, use
 
 	ggk, _ := database.GetJudgeKeys()
 	containsJudgeKeys := database.Judge(msg, *ggk.JudgekeysSync)
-	if containsJudgeKeys != "" {
+	if containsJudgeKeys != "" && !isBotAdmin {
 		msg := "消息触发守卫，已被拦截"
 		log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, msg)
 		return utils.RetStuct{
@@ -40,7 +40,7 @@ func (learnPlugin *LearnPlugin) Do(ctx *context.Context, guildId, channelId, use
 
 	if public.StartsWith(s, "#+") && (isBotAdmin || isAdmin) {
 		suspectedUrl := strings.Split(s, ".")
-		if len(suspectedUrl) > 1 {
+		if len(suspectedUrl) > 1 && !isBotAdmin {
 			if suspectedUrl[0] != "" && suspectedUrl[1] != "" && !isBotAdmin {
 				msg := "疑似网址(暂不支持网址)，已被拦截"
 				log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, msg)

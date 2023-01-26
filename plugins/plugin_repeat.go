@@ -21,7 +21,7 @@ func (rep *Repeat) Do(ctx *context.Context, guildId, channelId, userId, msg, msg
 
 	ggk, _ := database.GetJudgeKeys()
 	containsJudgeKeys := database.Judge(msg, *ggk.JudgekeysSync)
-	if containsJudgeKeys != "" {
+	if containsJudgeKeys != "" && !isBotAdmin {
 		msg := "消息触发守卫，已被拦截"
 		log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, msg)
 		return utils.RetStuct{

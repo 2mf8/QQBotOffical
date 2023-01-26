@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -36,7 +37,7 @@ func (price *PricePlugin) Do(ctx *context.Context, guildId, channelId, userId, m
 
 	ggk, _ := database.GetJudgeKeys()
 	containsJudgeKeys := database.Judge(msg, *ggk.JudgekeysSync)
-	if containsJudgeKeys != "" {
+	if containsJudgeKeys != "" && !isBotAdmin {
 		msg := "消息触发守卫，已被拦截"
 		log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, msg)
 		return utils.RetStuct{
@@ -151,18 +152,33 @@ func (price *PricePlugin) Do(ctx *context.Context, guildId, channelId, userId, m
 		ps := ""
 		psc := ""
 		ic := 0
-		cps, _ := database.GetItems("10001", "10001", s)
-		for _, i := range cps {
-			if i.Shipping.String == "" {
-				ps += "\n" + i.Item + " | " + i.Price.String
-			} else {
-				ps += "\n" + i.Item + " | " + i.Price.String + " | " + i.Shipping.String
-			}
-			if ic == 19 {
-				ps += "\n..."
+		ti := 0
+		topStart := 0
+		ss := strings.Split(s, "#")
+		if len(ss) > 1 {
+			topStart, _ = strconv.Atoi(strings.TrimSpace(ss[1]))
+		}
+		if topStart == 0 {
+			topStart = 1
+		}
+		cps, _ := database.GetItems("10001", "10001", ss[0])
+		for ii, i := range cps {
+			if !(ii < topStart-1 || ii > topStart+18) {
+				ic++
+				if i.Shipping.String == "" {
+					ps += "\n" + i.Item + " | " + i.Price.String
+					ti++
+				} else {
+					ps += "\n" + i.Item + " | " + i.Price.String + " | " + i.Shipping.String
+					ti++
+				}
+			} else if ii > topStart+18 {
+				ic++
 				break
 			}
-			ic++
+		}
+		if ic > 20 {
+			ps += "\n..."
 		}
 		if len(cps) == 0 {
 			replyText := "暂无相关记录"
@@ -176,7 +192,19 @@ func (price *PricePlugin) Do(ctx *context.Context, guildId, channelId, userId, m
 				ReqType: utils.GuildMsg,
 			}
 		} else {
-			psc = "共搜到" + strconv.Itoa(len(cps)) + "条记录" + "\n品名 | 价格 | 备注" + ps + "\n价格源自 黄小姐的魔方店"
+			if ti == 0 {
+				replyText := fmt.Sprintf("%s Top %d - %d ", ss[0], topStart, topStart+19) + "暂无相关记录"
+				log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, replyText)
+
+				return utils.RetStuct{
+					RetVal: utils.MESSAGE_BLOCK,
+					ReplyMsg: &utils.Msg{
+						Text: replyText,
+					},
+					ReqType: utils.GuildMsg,
+				}
+			}
+			psc = "共搜到" + strconv.Itoa(len(cps)) + "条记录" + fmt.Sprintf("\nTop %d - %d", topStart, topStart+ti-1) + "\n品名 | 价格 | 备注" + ps + "\n价格源自 黄小姐的魔方店"
 			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, psc)
 			return utils.RetStuct{
 				RetVal: utils.MESSAGE_BLOCK,
@@ -291,18 +319,33 @@ func (price *PricePlugin) Do(ctx *context.Context, guildId, channelId, userId, m
 		ps := ""
 		psc := ""
 		ic := 0
-		cps, _ := database.GetItems("10002", "10002", s)
-		for _, i := range cps {
-			if i.Shipping.String == "" {
-				ps += "\n" + i.Item + " | " + i.Price.String
-			} else {
-				ps += "\n" + i.Item + " | " + i.Price.String + " | " + i.Shipping.String
-			}
-			if ic == 19 {
-				ps += "\n..."
+		ti := 0
+		topStart := 0
+		ss := strings.Split(s, "#")
+		if len(ss) > 1 {
+			topStart, _ = strconv.Atoi(strings.TrimSpace(ss[1]))
+		}
+		if topStart == 0 {
+			topStart = 1
+		}
+		cps, _ := database.GetItems("10002", "10002", ss[0])
+		for ii, i := range cps {
+			if !(ii < topStart-1 || ii > topStart+18) {
+				ic++
+				if i.Shipping.String == "" {
+					ps += "\n" + i.Item + " | " + i.Price.String
+					ti++
+				} else {
+					ps += "\n" + i.Item + " | " + i.Price.String + " | " + i.Shipping.String
+					ti++
+				}
+			} else if ii > topStart+18 {
+				ic++
 				break
 			}
-			ic++
+		}
+		if ic > 20 {
+			ps += "\n..."
 		}
 		if len(cps) == 0 {
 			replyText := "暂无相关记录"
@@ -316,7 +359,19 @@ func (price *PricePlugin) Do(ctx *context.Context, guildId, channelId, userId, m
 				ReqType: utils.GuildMsg,
 			}
 		} else {
-			psc = "共搜到" + strconv.Itoa(len(cps)) + "条记录" + "\n品名 | 价格 | 备注" + ps + "\n价格源自 奇乐魔方坊"
+			if ti == 0 {
+				replyText := fmt.Sprintf("%s Top %d - %d ", ss[0], topStart, topStart+19) + "暂无相关记录"
+				log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, replyText)
+
+				return utils.RetStuct{
+					RetVal: utils.MESSAGE_BLOCK,
+					ReplyMsg: &utils.Msg{
+						Text: replyText,
+					},
+					ReqType: utils.GuildMsg,
+				}
+			}
+			psc = "共搜到" + strconv.Itoa(len(cps)) + "条记录" + fmt.Sprintf("\nTop %d - %d", topStart, topStart+ti-1) + "\n品名 | 价格 | 备注" + ps + "\n价格源自 奇乐魔方坊"
 			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, psc)
 			return utils.RetStuct{
 				RetVal: utils.MESSAGE_BLOCK,
