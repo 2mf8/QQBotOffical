@@ -48,6 +48,8 @@ func main() {
 	// role 4 频道主 11 普通成员 2 管理员 5 子频道管理 13 普通成员
 	// 监听哪类事件就需要实现哪类的 handler，定义：websocket/event_handler.go
 	var message event.MessageEventHandler = func(event *dto.WSPayload, data *dto.WSMessageData) error {
+		me, _ := api.Me(ctx)
+		atBot := fmt.Sprintf("<@!%s>", me.ID)
 		imgStr := ""
 		imgs := []string{}
 		if len(data.Attachments) != 0 {
@@ -69,10 +71,10 @@ func main() {
 		roles := data.Member.Roles
 		isAdmin := public.IsAdmin(roles)
 		isCompAdmin := public.IsCompAdmin(roles)
-		br, _ := api.GuildMember(ctx, guildId, "13970278473675774808")
+		br, _ := api.GuildMember(ctx, guildId, me.ID)
 		botIsAdmin := public.IsAdmin(br.Roles)
 		isBotAdmin := public.IsBotAdmin(userId)
-		rawMsg := strings.TrimSpace(strings.ReplaceAll(msg, "<@!13970278473675774808>", ""))
+		rawMsg := strings.TrimSpace(strings.ReplaceAll(msg, atBot, ""))
 		reg1 := regexp.MustCompile("％")
 		reg2 := regexp.MustCompile("＃")
 		reg3 := regexp.MustCompile("？")
@@ -110,6 +112,10 @@ func main() {
 					api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Content: rawMsg})
 				}
 			}
+		}
+
+		if isBotAdmin && public.StartsWith(rawMsg, "频道") {
+			api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Content: "https://pd.qq.com/s/4syyazec6"})
 		}
 
 		if (isCompAdmin || isBotAdmin) && public.StartsWith(rawMsg, ".假成绩删除") {

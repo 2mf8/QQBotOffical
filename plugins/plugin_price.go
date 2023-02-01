@@ -178,7 +178,7 @@ func (price *PricePlugin) Do(ctx *context.Context, guildId, channelId, userId, m
 			}
 		}
 		if ic > 20 {
-			ps += "\n..."
+			ps += "\n...\n\n翻页请使用\n%[品名]#[序号]\n指令。例如：\n%三#21\n"
 		}
 		if len(cps) == 0 {
 			replyText := "暂无相关记录"
@@ -345,7 +345,7 @@ func (price *PricePlugin) Do(ctx *context.Context, guildId, channelId, userId, m
 			}
 		}
 		if ic > 20 {
-			ps += "\n..."
+			ps += "\n...\n\n翻页请使用\n%[品名]#[序号]\n指令。例如：\n%三#21\n"
 		}
 		if len(cps) == 0 {
 			replyText := "暂无相关记录"
