@@ -1,3 +1,4 @@
+//go:generate goversioninfo
 package main
 
 import (
@@ -19,6 +20,7 @@ import (
 	easy "github.com/t-tomalak/logrus-easy-formatter"
 	"github.com/tencent-connect/botgo"
 	"github.com/tencent-connect/botgo/dto"
+	"github.com/tencent-connect/botgo/dto/keyboard"
 	"github.com/tencent-connect/botgo/event"
 	"github.com/tencent-connect/botgo/openapi"
 	"github.com/tencent-connect/botgo/token"
@@ -84,12 +86,25 @@ func main() {
 		rawMsg = strings.TrimSpace(reg1.ReplaceAllString(rawMsg, "%"))
 		rawMsg = strings.TrimSpace(reg2.ReplaceAllString(rawMsg, "#"))
 		rawMsg = strings.TrimSpace(reg3.ReplaceAllString(rawMsg, "?"))
+
+		if isBotAdmin && public.StartsWith(rawMsg, "私信") {
+			dmsg, err := api.CreateDirectMessage(ctx, &dto.DirectMessageToCreate{
+				SourceGuildID: guildId,
+				RecipientID:   data.Author.ID,
+			})
+			if err != nil {
+				log.Warnf("私信出错了，err = ", err)
+				return nil
+			}
+			api.PostDirectMessage(ctx, dmsg, &dto.MessageToCreate{Content: "hello", MsgID: data.ID})
+		}
+
 		if !isBotAdmin {
 			rawMsg = strings.TrimSpace(reg4.ReplaceAllString(rawMsg, ""))
 		}
 		rawMsg = strings.TrimSpace(reg5.ReplaceAllString(rawMsg, "."))
 
-		if public.Contains(msg, "<@!13970278473675774808>") {
+		if public.Contains(msg, atBot) {
 			if !public.StartsWith(rawMsg, "%") {
 				rawMsg = "." + rawMsg
 			}
@@ -133,7 +148,7 @@ func main() {
 			//api.DeleteGuildMember()
 		}
 
-		/*if msg == "kb" {
+		if msg == "kb" {
 			md := []*dto.MarkdownParams{
 				{Key: "img_url_theme", Values: []string{
 					"https://www.2mf8.cn/image/sjpm.jpg",
@@ -148,7 +163,7 @@ func main() {
 				{Key: "img_url_4", Values: []string{"https://qqchannel-profile-1251316161.file.myqcloud.com/1654847790f6890421f8050c6d?t=1662981639"}},
 				{Key: "ordinal_grade_and_nickname_4", Values: []string{"4 25.32 爱魔方吧4"}},
 			}
-			kb := keyboard.CustomKeyboard{
+			/*kb := keyboard.CustomKeyboard{
 				Rows: []*keyboard.Row{
 					{
 						Buttons: []*keyboard.Button{
@@ -264,7 +279,7 @@ func main() {
 					},
 				},
 			}
-			fmt.Printf("按钮 %v", kb.Rows)
+			fmt.Printf("按钮 %v", kb.Rows)*/
 			api.PostMessage(ctx, channelId, &dto.MessageToCreate{Markdown: &dto.Markdown{TemplateID: "101981675_1674092012", Params: md}, Keyboard: &keyboard.MessageKeyboard{
 				ID: "101981675_1674175840",
 			},
@@ -293,11 +308,11 @@ func main() {
 						},
 					},
 				},
-			},
+			},*/
 			})
 			//fmt.Println("测试",dm, "错误", err)
 			//api.DeleteGuildMember()
-		}*/
+		}
 		channel, err := api.Channel(ctx, channelId)
 		if err != nil {
 			log.Warnf("获取子频道信息出错， err = %+v", err)
@@ -527,7 +542,7 @@ func main() {
 						MsgID:   data.ID,
 					}
 					api.PostMessage(ctx, channelId, newMsg)
-					api.RetractMessage(ctx, channelId, msgId, openapi.RetractMessageOptionHidetip, openapi.RetractMessageOptionHidetip)
+					api.RetractMessage(ctx, channelId, msgId, openapi.RetractMessageOptionHidetip)
 					break
 				}
 			}
