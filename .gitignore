@@ -47,7 +47,10 @@ captcha.jpg
 cuberbot
 tmp
 dist/
-#plugins/
+# plugins/
 gmc_android.aar
 gmc_android-sources.jar
 *.json
+*.syso
+*.rc
+data/data_conn.go

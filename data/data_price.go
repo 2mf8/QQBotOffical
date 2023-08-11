@@ -16,7 +16,7 @@ type CuberPrice struct {
 	Item        string      `json:"item"`
 	Price       null.String `json:"price"`
 	Shipping    null.String `json:"shipping"`
-	Updater     string      `json:"updater"`
+	Updater     null.String `json:"updater"`
 	GmtModified null.Time   `json:"gmt_modified"`
 }
 
@@ -62,7 +62,7 @@ func (cp *CuberPrice) ItemDeleteById() (err error) {
 	return
 }
 
-func ItemSave(guildId, channelId string, brand null.String, item string, price null.String, shipping null.String, updater string, gmtModified null.Time) (err error) {
+func ItemSave(guildId, channelId string, brand null.String, item string, price null.String, shipping null.String, updater null.String, gmtModified null.Time) (err error) {
 	cp := CuberPrice{
 		GuildId:     guildId,
 		ChannelId:   channelId,

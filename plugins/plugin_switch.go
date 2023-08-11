@@ -15,7 +15,7 @@ import (
 type BotSwitch struct {
 }
 
-func (botSwitch *BotSwitch) Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool, priceSearch string, imgs []string) utils.RetStuct {
+func (botSwitch *BotSwitch) Do(ctx *context.Context, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, attachments []string) utils.RetStuct {
 
 	s, b := public.Prefix(msg, ".")
 	if !b {
@@ -23,7 +23,7 @@ func (botSwitch *BotSwitch) Do(ctx *context.Context, guildId, channelId, userId,
 			RetVal: utils.MESSAGE_IGNORE,
 		}
 	}
-
+	isAdmin := public.IsAdmin(useRole)
 	if public.StartsWith(s, "开启") && (isAdmin || botIsAdmin) {
 		s = strings.TrimSpace(strings.TrimPrefix(s, "开启"))
 		if s == "开关" {

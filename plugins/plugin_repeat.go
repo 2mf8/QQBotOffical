@@ -14,11 +14,12 @@ import (
 type Repeat struct {
 }
 
-func (rep *Repeat) Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool, priceSearch string, imgs []string) utils.RetStuct {
+func (rep *Repeat) Do(ctx *context.Context, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, attachments []string) utils.RetStuct {
 
 	rand.Seed(time.Now().UnixNano())
 	r := rand.Intn(101)
 
+	isBotAdmin := public.IsBotAdmin(userId)
 	ggk, _ := database.GetJudgeKeys()
 	containsJudgeKeys := database.Judge(msg, *ggk.JudgekeysSync)
 	if containsJudgeKeys != "" && !isBotAdmin {

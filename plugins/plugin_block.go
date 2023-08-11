@@ -15,10 +15,11 @@ import (
 
 type Block struct{}
 
-func (block *Block) Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool, priceSearch string, imgs []string) utils.RetStuct {
+func (block *Block) Do(ctx *context.Context, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, attachments []string) utils.RetStuct {
 
+	isBotAdmin := public.IsBotAdmin(userId)
 	ispblock, _ := database.PBlockGet(guildId, userId)
-	if ispblock.PBlockSync.UserId == userId && ispblock.PBlockSync.IsPBlock {
+	if ispblock.UserId == userId && ispblock.IsPBlock {
 		if !isBotAdmin {
 			return utils.RetStuct{
 				RetVal: utils.MESSAGE_BLOCK,

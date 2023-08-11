@@ -14,7 +14,7 @@ import (
 type Admin struct {
 }
 
-func (admin *Admin) Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool, priceSearch string, imgs []string) utils.RetStuct {
+func (admin *Admin) Do(ctx *context.Context, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, attachments []string) utils.RetStuct {
 
 	s, b := public.Prefix(msg, ".")
 
@@ -57,7 +57,7 @@ func (admin *Admin) Do(ctx *context.Context, guildId, channelId, userId, msg, ms
 		jinTime = strconv.Itoa(int(public.ConvertTime(cstr) + 1))
 	}
 
-	if public.StartsWith(str2, "jin") {
+	if public.IsAdmin(useRole) && public.StartsWith(str2, "jin") {
 		if len(cstrs) == 0 {
 			reply := "禁言用户不能为空"
 			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, reply)
@@ -91,7 +91,7 @@ func (admin *Admin) Do(ctx *context.Context, guildId, channelId, userId, msg, ms
 		}
 	}
 
-	if public.StartsWith(str2, "jie") {
+	if public.IsAdmin(useRole) && public.StartsWith(str2, "jie") {
 		if len(cstrs) == 0 {
 			reply := "解禁用户不能为空"
 			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, reply)
@@ -111,7 +111,7 @@ func (admin *Admin) Do(ctx *context.Context, guildId, channelId, userId, msg, ms
 		}
 	}
 
-	if public.StartsWith(str2, "t") || public.StartsWith(str2, "T") {
+	if public.IsAdmin(useRole) && (public.StartsWith(str2, "t") || public.StartsWith(str2, "T")) {
 		rejectAddAgain := public.StartsWith(str2, "T")
 		retract := 0
 		if public.StartsWith(str2, "ti") || public.StartsWith(str2, "Ti") {

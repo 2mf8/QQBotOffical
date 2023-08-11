@@ -5,22 +5,26 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/fatih/color"
 	_ "github.com/denisenkom/go-mssqldb"
+	"github.com/fatih/color"
 	"github.com/gomodule/redigo/redis"
 )
 
 var Db *sql.DB
 var debug = flag.Bool("debug", false, "enable debugging")
-var password = flag.String("password", "wr@#kequ5060", "the database password")
+
+var password = flag.String("password", "wr@#2mf8", "the database password")
 var iport *int = flag.Int("port", 1433, "the database port")
-var server = flag.String("server", "127.0.0.1", "the database server")
+
+var server = flag.String("server", "116.62.13.42", "the database server")
+//var server = flag.String("server", "127.0.0.1", "the database server")
 var user = flag.String("user", "sa", "the database user")
 var Pool *redis.Pool
 var redis_url = flag.String("redis_addr", "127.0.0.1", "the redis url")
 var redis_port *int = flag.Int("redis_port", 6379, "the redis port")
 var redis_password = flag.String("redis_password", "", "the redis password")
 var redis_db *int = flag.Int("redis_db", 0, "the redis db")
+
 //var redis_pool_size *int = flag.Int("redis_pool_size", 1000, "the redis pool size")
 
 func init() {

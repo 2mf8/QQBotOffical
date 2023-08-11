@@ -4,6 +4,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"path"
 	"regexp"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	database "github.com/2mf8/QQBotOffical/data"
+	"github.com/2mf8/QQBotOffical/plugins"
 	_ "github.com/2mf8/QQBotOffical/plugins"
 	"github.com/2mf8/QQBotOffical/public"
 	"github.com/2mf8/QQBotOffical/utils"
@@ -20,7 +22,6 @@ import (
 	easy "github.com/t-tomalak/logrus-easy-formatter"
 	"github.com/tencent-connect/botgo"
 	"github.com/tencent-connect/botgo/dto"
-	"github.com/tencent-connect/botgo/dto/keyboard"
 	"github.com/tencent-connect/botgo/event"
 	"github.com/tencent-connect/botgo/openapi"
 	"github.com/tencent-connect/botgo/token"
@@ -47,8 +48,10 @@ func main() {
 	if err != nil {
 		log.Printf("%+v, err:%v", ws, err)
 	}
-	// role 4 频道主 11 普通成员 2 管理员 5 子频道管理 13 普通成员
 	// 监听哪类事件就需要实现哪类的 handler，定义：websocket/event_handler.go
+	var rolesMap = map[string][]string{}
+	// roles":[{"id":"4","name":"频道主","color":4294917938,"hoist":1,"number":1,"member_limit":1},{"id":"2","name":"超级管理员","color":4294936110,"hoist":1,"number":17,"member_limit":50},{"id":"7","name":"分组管理员","color":4283608319,"hoist":1,"number":0,"member_limit":50},{"id":"5","name":"子频道管理员","color":4288922822,"hoist":1,"number":16,"member_limit":50},{"id":"10012668","name":"直播组","color":4283249526,"hoist":0,"number":0,"member_limit":3000},{"id":"10012638","name":"魔方官方","color":4293221280,"hoist":1,"number":7,"member_limit":3000},{"id":"10012648","name":"知名选手","color":4294920704,"hoist":1,"number":6,"member_limit":3000},{"id":"10012655","name":"资深魔友","color":4290852578,"hoist":1,"number":40,"member_limit":3000},{"id":"10012214","name":"一个头衔","color":4288044306,"hoist":0,"number":18,"member_limit":3000},{"id":"10015793","name":"魔方店家","color":4279419354,"hoist":1,"number":2,"member_limit":3000},{"id":"13719410","name":"开发者","color":4285672924,"hoist":1,"number":2,"member_limit":3000},{"id":"13818102","name":"赛季巡查员","color":4292095291,"hoist":1,"number":2,"member_limit":3000},{"id":"13818124","name":"广告巡查员","color":4289887999,"hoist":1,"number":7,"member_limit":3000},{"id":"14102869","name":"热心魔友","color":4279419354,"hoist":1,"number":4,"member_limit":3000},{"id":"6","name":"访客","color":4286151052,"hoist":0,"number":0,"member_limit":3000},{"id":"1","name":"普通成员","color":4286151052,"hoist":0,"number":0,"member_limit":1000}],"role_num_limit":"32"}
+
 	var message event.MessageEventHandler = func(event *dto.WSPayload, data *dto.WSMessageData) error {
 		me, _ := api.Me(ctx)
 		atBot := fmt.Sprintf("<@!%s>", me.ID)
@@ -71,8 +74,6 @@ func main() {
 		srcGuildID := data.SrcGuildID         // 私信下确定频道来源
 		isDirectMessage := data.DirectMessage // 是否是私信
 		roles := data.Member.Roles
-		isAdmin := public.IsAdmin(roles)
-		isCompAdmin := public.IsCompAdmin(roles)
 		br, _ := api.GuildMember(ctx, guildId, me.ID)
 		botIsAdmin := public.IsAdmin(br.Roles)
 		isBotAdmin := public.IsBotAdmin(userId)
@@ -87,7 +88,39 @@ func main() {
 		rawMsg = strings.TrimSpace(reg2.ReplaceAllString(rawMsg, "#"))
 		rawMsg = strings.TrimSpace(reg3.ReplaceAllString(rawMsg, "?"))
 
-		if isBotAdmin && public.StartsWith(rawMsg, "私信") {
+		fmt.Println("通过？", plugins.Pass(roles))
+
+		if len(rolesMap[guildId]) == 0 {
+			var gRoles []string
+			guildRoles, err := api.Roles(ctx, guildId)
+			if err == nil {
+				for _, r := range guildRoles.Roles {
+					if r.Name != "普通成员" && r.Name != "访客" {
+						gRoles = append(gRoles, string(r.ID))
+					}
+				}
+			}
+			rolesMap[guildId] = gRoles
+			fmt.Println(rolesMap)
+		}
+
+		if public.IsAdmin(roles) && strings.TrimSpace(rawMsg) == "更新" {
+			var gRoles []string
+			guildRoles, err := api.Roles(ctx, guildId)
+			defer api.Roles(ctx, guildId)
+			if err == nil {
+				for _, r := range guildRoles.Roles {
+					if r.Name != "普通成员" && r.Name != "访客" {
+						gRoles = append(gRoles, string(r.ID))
+					}
+				}
+			}
+			rolesMap[guildId] = gRoles
+			fmt.Println(rolesMap)
+			api.PostMessage(ctx, channelId, &dto.MessageToCreate{Content: "更新成功"})
+		}
+
+		if isBotAdmin && public.StartsWith(rawMsg, "信") {
 			dmsg, err := api.CreateDirectMessage(ctx, &dto.DirectMessageToCreate{
 				SourceGuildID: guildId,
 				RecipientID:   data.Author.ID,
@@ -110,14 +143,6 @@ func main() {
 			}
 		}
 
-		if (isCompAdmin || isBotAdmin) && public.StartsWith(rawMsg, "传") {
-			if public.Contains(rawMsg, ".") {
-				api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Content: "成功，已确认赛季管理员或机器人管理身份"})
-			} else {
-				api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Content: rawMsg})
-			}
-		}
-
 		if isBotAdmin && public.StartsWith(rawMsg, "转") {
 			rawMsg, _ = public.Prefix(rawMsg, "转")
 			if rawMsg != "" {
@@ -133,186 +158,6 @@ func main() {
 			api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Content: "https://pd.qq.com/s/4syyazec6"})
 		}
 
-		if (isCompAdmin || isBotAdmin) && public.StartsWith(rawMsg, ".假成绩删除") {
-			rawMsg = ".$" + rawMsg
-			rawMsg = strings.TrimSpace(strings.ReplaceAll(rawMsg, "$.", "$"))
-		}
-
-		fmt.Println("管理员？", isAdmin, public.IsAdmin(br.Roles)) // 消息发送者角色
-		if msg == "机器人权限确认" {
-			if public.IsAdmin(br.Roles) {
-				api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Content: "机器人是管理员"})
-			} else {
-				api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Content: "机器人不是管理员"})
-			}
-			//api.DeleteGuildMember()
-		}
-
-		if msg == "kb" {
-			md := []*dto.MarkdownParams{
-				{Key: "img_url_theme", Values: []string{
-					"https://www.2mf8.cn/image/sjpm.jpg",
-				}},
-				{Key: "rank_desc", Values: []string{"赛季1 项目 222 最佳成绩 Top 1-4"}},
-				{Key: "img_url_1", Values: []string{"https://qqchannel-profile-1251316161.file.myqcloud.com/1654847790f6890421f8050c6d?t=1662981639"}},
-				{Key: "ordinal_grade_and_nickname_1", Values: []string{"1 25.32 爱魔方吧"}},
-				{Key: "img_url_2", Values: []string{"https://qqchannel-profile-1251316161.file.myqcloud.com/1654847790f6890421f8050c6d?t=1662981639"}},
-				{Key: "ordinal_grade_and_nickname_2", Values: []string{"2 25.32 爱魔方吧测试"}},
-				{Key: "img_url_3", Values: []string{"https://qqchannel-profile-1251316161.file.myqcloud.com/1654847790f6890421f8050c6d?t=1662981639"}},
-				{Key: "ordinal_grade_and_nickname_3", Values: []string{"3 25.32 3爱魔方吧"}},
-				{Key: "img_url_4", Values: []string{"https://qqchannel-profile-1251316161.file.myqcloud.com/1654847790f6890421f8050c6d?t=1662981639"}},
-				{Key: "ordinal_grade_and_nickname_4", Values: []string{"4 25.32 爱魔方吧4"}},
-			}
-			/*kb := keyboard.CustomKeyboard{
-				Rows: []*keyboard.Row{
-					{
-						Buttons: []*keyboard.Button{
-							{
-								ID: "1",
-								RenderData: &keyboard.RenderData{
-									Label:        "赛季信息",
-									VisitedLabel: "↑赛季信息",
-									Style:        0,
-								},
-								Action: &keyboard.Action{
-									Type: keyboard.ActionTypeAtBot,
-									Permission: &keyboard.Permission{
-										Type: keyboard.PermissionTypAll,
-									},
-									Data:                 "赛季信息",
-									AtBotShowChannelList: false,
-								},
-							},
-							{
-								ID: "2",
-								RenderData: &keyboard.RenderData{
-									Label:        "我的成绩",
-									VisitedLabel: "↑我的成绩",
-									Style:        0,
-								},
-								Action: &keyboard.Action{
-									Type: keyboard.ActionTypeAtBot,
-									Permission: &keyboard.Permission{
-										Type: keyboard.PermissionTypAll,
-									},
-									Data:                 "我的成绩",
-									AtBotShowChannelList: false,
-								},
-							},
-						},
-					},
-					{
-						Buttons: []*keyboard.Button{
-							{
-								ID: "3",
-								RenderData: &keyboard.RenderData{
-									Label:        "赛季擂主",
-									VisitedLabel: "↑赛季擂主",
-									Style:        0,
-								},
-								Action: &keyboard.Action{
-									Type: keyboard.ActionTypeAtBot,
-									Permission: &keyboard.Permission{
-										Type: keyboard.PermissionTypAll,
-									},
-									Data:                 "赛季擂主",
-									AtBotShowChannelList: false,
-								},
-							},
-							{
-								ID: "4",
-								RenderData: &keyboard.RenderData{
-									Label:        "使用说明",
-									VisitedLabel: "↑使用说明",
-									Style:        0,
-								},
-								Action: &keyboard.Action{
-									Type: keyboard.ActionTypeURL,
-									Permission: &keyboard.Permission{
-										Type: keyboard.PermissionTypAll,
-									},
-									Data:                 "https://www.2mf8.cn/tag/",
-									AtBotShowChannelList: false,
-								},
-							},
-						},
-					},
-					{
-						Buttons: []*keyboard.Button{
-							{
-								ID: "5",
-								RenderData: &keyboard.RenderData{
-									Label:        "赛季打乱333",
-									VisitedLabel: "↑赛季打乱333",
-									Style:        0,
-								},
-								Action: &keyboard.Action{
-									Type: keyboard.ActionTypeCallback,
-									Permission: &keyboard.Permission{
-										Type: keyboard.PermissionTypAll,
-									},
-									Data:                 ".赛季打乱333",
-									AtBotShowChannelList: false,
-								},
-							},
-						},
-					},
-					{
-						Buttons: []*keyboard.Button{
-							{
-								ID: "6",
-								RenderData: &keyboard.RenderData{
-									Label:        "赛季打乱333第一个",
-									VisitedLabel: "↑赛季打乱333",
-									Style:        0,
-								},
-								Action: &keyboard.Action{
-									Type: keyboard.ActionTypeCallback,
-									Permission: &keyboard.Permission{
-										Type: keyboard.PermissionTypAll,
-									},
-									Data:                 ".赛季打乱333第一个",
-									AtBotShowChannelList: false,
-								},
-							},
-						},
-					},
-				},
-			}
-			fmt.Printf("按钮 %v", kb.Rows)*/
-			api.PostMessage(ctx, channelId, &dto.MessageToCreate{Markdown: &dto.Markdown{TemplateID: "101981675_1674092012", Params: md}, Keyboard: &keyboard.MessageKeyboard{
-				ID: "101981675_1674175840",
-			},
-			/*Keyboard: &keyboard.MessageKeyboard{
-				ID: "",
-				Content: &keyboard.CustomKeyboard{
-					Rows: []*keyboard.Row{
-						{
-							Buttons: []*keyboard.Button{
-								{
-									ID: "",
-									RenderData: &keyboard.RenderData{
-										Label: "测试",
-									},
-									Action: &keyboard.Action{
-										Type: keyboard.ActionTypeCallback,
-										Permission: &keyboard.Permission{
-											Type: keyboard.PermissionTypAll,
-										},
-										ClickLimit: 1000,
-										Data: "",
-										AtBotShowChannelList: true,
-									},
-								},
-							},
-						},
-					},
-				},
-			},*/
-			})
-			//fmt.Println("测试",dm, "错误", err)
-			//api.DeleteGuildMember()
-		}
 		channel, err := api.Channel(ctx, channelId)
 		if err != nil {
 			log.Warnf("获取子频道信息出错， err = %+v", err)
@@ -335,7 +180,7 @@ func main() {
 			if intent > 0 {
 				continue
 			}
-			retStuct := utils.PluginSet[i].Do(&ctx, guildId, channelId, userId, rawMsg, msgId, username, avatar, srcGuildID, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin, priceSearch, imgs)
+			retStuct := utils.PluginSet[i].Do(&ctx, rolesMap, guildId, channelId, userId, rawMsg, msgId, username, avatar, srcGuildID, roles, isBot, isDirectMessage, botIsAdmin, priceSearch, imgs)
 			if retStuct.RetVal == utils.MESSAGE_BLOCK {
 				if retStuct.ReqType == utils.GuildMsg {
 					if retStuct.ReplyMsg != nil {
@@ -357,7 +202,121 @@ func main() {
 								MsgID:   data.ID,
 							}
 						}
-						api.PostMessage(ctx, channelId, newMsg)
+						if public.Contains(retStuct.ReplyMsg.Text, "奇乐") {
+							api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Ark: &dto.Ark{TemplateID: 23, KV: []*dto.ArkKV{
+								{
+									Key:   "#DESC#",
+									Value: "消息",
+								},
+								{
+									Key:   "#PROMPT#",
+									Value: "查价",
+								},
+								{
+									Key: "#LIST#",
+									Obj: []*dto.ArkObj{
+										{
+											ObjKV: []*dto.ArkObjKV{
+												{
+													Key:   "desc",
+													Value: newMsg.Content,
+												},
+											},
+										},
+										{
+											ObjKV: []*dto.ArkObjKV{
+												{
+													Key:   "desc",
+													Value: "🔗奇乐最新价格",
+												},
+												{
+													Key:   "link",
+													Value: "https://2mf8.cn/webview/#/pages/index/webview?url=https%3A%2F%2Fqilecube.gitee.io%2F",
+												},
+											},
+										},
+									},
+								},
+							}}})
+						} else if len(retStuct.ReplyMsg.Images) == 0 && retStuct.ReplyMsg.Image == "" {
+							var results [][2]string
+							//s := "测试1[ss](https://2mf8.cn)test1[百度](https://www.baidu.com)jkdhi是"
+							//reg := regexp.MustCompile(`(\[[^x00-xff]+\])(\([a-zA-Z0-9:/.]*\))`)
+							//reg1 := regexp.MustCompile(`[一-龥a-zA-Z]+`)
+
+							reg := regexp.MustCompile(`(\[[一-龥a-zA-Z]+\])(\([a-zA-Z0-9:/.]*\))`)
+							strs := reg.FindAllString(retStuct.ReplyMsg.Text, -1)
+							texts := reg.Split(retStuct.ReplyMsg.Text, -1)
+							if len(strs) == 0 {
+								results = append(results, [2]string{retStuct.ReplyMsg.Text})
+							}
+							for i, iv := range texts {
+								for j, jv := range strs {
+									if i == j {
+										results = append(results, [2]string{iv})
+										var result [2]string
+										link := strings.Split(jv, "](")
+										result[0] = strings.ReplaceAll(link[0], "[", "")
+										result[1] = strings.ReplaceAll(link[1], ")", "")
+										results = append(results, result)
+									}
+								}
+								if i != 0 && i > len(strs)-1 && texts[i] != "" {
+									results = append(results, [2]string{iv})
+								}
+							}
+							fmt.Println(strs, texts, len(texts), results, retStuct.ReplyMsg.Text)
+
+							var _msg []*dto.ArkObj
+							for _, v := range results {
+								if v[0] != "" && v[1] == "" {
+									kv := &dto.ArkObj{
+										ObjKV: []*dto.ArkObjKV{
+											{
+												Key:   "desc",
+												Value: strings.TrimSpace(v[0]),
+											},
+										},
+									}
+									_msg = append(_msg, kv)
+								}
+								if strings.TrimSpace(v[0]) != "" && strings.TrimSpace(v[1]) != "" {
+									_key := "🔗" + strings.TrimSpace(v[0])
+									if strings.HasPrefix(v[1], "http") {
+										_url := "https://2mf8.cn/webview/#/pages/index/webview?url=" + url.QueryEscape(strings.TrimSpace(v[1]))
+										kv := &dto.ArkObj{
+											ObjKV: []*dto.ArkObjKV{
+												{
+													Key:   "desc",
+													Value: _key,
+												},
+												{
+													Key:   "link",
+													Value: _url,
+												},
+											},
+										}
+										_msg = append(_msg, kv)
+									}
+								}
+							}
+							api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Ark: &dto.Ark{TemplateID: 23, KV: []*dto.ArkKV{
+								{
+									Key:   "#DESC#",
+									Value: "消息",
+								},
+								{
+									Key:   "#PROMPT#",
+									Value: "问答",
+								},
+								{
+									Key: "#LIST#",
+									Obj: _msg,
+								},
+							}}})
+						} else {
+							api.PostMessage(ctx, channelId, newMsg)
+						}
 						if len(retStuct.ReplyMsg.Images) == 2 {
 							api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Image: "https://" + retStuct.ReplyMsg.Images[1]})
 						}
@@ -536,7 +495,7 @@ func main() {
 				if retStuct.ReqType == utils.GuildLeave {
 				}
 				if retStuct.ReqType == utils.DeleteMsg {
-					api.MemberMute(ctx, guildId, userId, &dto.UpdateGuildMute{MuteSeconds: "120"})
+					api.MemberMute(ctx, guildId, userId, &dto.UpdateGuildMute{MuteSeconds: retStuct.Duration})
 					newMsg := &dto.MessageToCreate{
 						Content: retStuct.ReplyMsg.Text,
 						MsgID:   data.ID,

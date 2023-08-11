@@ -19,8 +19,10 @@ import (
 type PricePlugin struct {
 }
 
-func (price *PricePlugin) Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool, priceSearch string, imgs []string) utils.RetStuct {
+func (price *PricePlugin) Do(ctx *context.Context, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, attachments []string) utils.RetStuct {
 
+	isBotAdmin := public.IsBotAdmin(userId)
+	isAdmin := public.IsAdmin(useRole)
 	reg1 := regexp.MustCompile("％")
 	reg2 := regexp.MustCompile("＃")
 	reg3 := regexp.MustCompile("＆")
@@ -68,7 +70,7 @@ func (price *PricePlugin) Do(ctx *context.Context, guildId, channelId, userId, m
 
 				err := database.IDBGAN("10001", "10001", str5[0])
 				if err != nil {
-					replyText := "删除失败"
+					replyText := "删除失败，该商品不存在。"
 					log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, replyText)
 					return utils.RetStuct{
 						RetVal: utils.MESSAGE_BLOCK,
@@ -101,7 +103,7 @@ func (price *PricePlugin) Do(ctx *context.Context, guildId, channelId, userId, m
 			}
 			str6 := strings.Split(str5[1], "#?")
 			if len(str6) != 2 {
-				err := database.ItemSave("10001", "10001", null.String{}, str5[0], null.NewString(str6[0], true), null.String{}, userId, null.NewTime(time.Now(), true))
+				err := database.ItemSave("10001", "10001", null.String{}, str5[0], null.NewString(str6[0], true), null.String{}, null.NewString(userId, true), null.NewTime(time.Now(), true))
 				if err != nil {
 					replyText := "添加失败"
 					log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, replyText)
@@ -125,7 +127,7 @@ func (price *PricePlugin) Do(ctx *context.Context, guildId, channelId, userId, m
 					ReqType: utils.GuildMsg,
 				}
 			}
-			err := database.ItemSave("10001", "10001", null.String{}, str5[0], null.NewString(str6[0], true), null.NewString(str6[1], true), userId, null.NewTime(time.Now(), true))
+			err := database.ItemSave("10001", "10001", null.String{}, str5[0], null.NewString(str6[0], true), null.NewString(str6[1], true), null.NewString(userId, true), null.NewTime(time.Now(), true))
 			if err != nil {
 				replyText := "添加失败"
 				log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, replyText)
@@ -234,8 +236,9 @@ func (price *PricePlugin) Do(ctx *context.Context, guildId, channelId, userId, m
 				}
 
 				err := database.IDBGAN("10002", "10002", str5[0])
+				fmt.Println(err)
 				if err != nil {
-					replyText := "删除失败"
+					replyText := "删除失败，该商品不存在。"
 					log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, replyText)
 					return utils.RetStuct{
 						RetVal: utils.MESSAGE_BLOCK,
@@ -268,7 +271,7 @@ func (price *PricePlugin) Do(ctx *context.Context, guildId, channelId, userId, m
 			}
 			str6 := strings.Split(str5[1], "#?")
 			if len(str6) != 2 {
-				err := database.ItemSave("10002", "10002", null.String{}, str5[0], null.NewString(str6[0], true), null.String{}, userId, null.NewTime(time.Now(), true))
+				err := database.ItemSave("10002", "10002", null.String{}, str5[0], null.NewString(str6[0], true), null.String{}, null.NewString(userId, true), null.NewTime(time.Now(), true))
 				if err != nil {
 					replyText := "添加失败"
 					log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, replyText)
@@ -292,7 +295,7 @@ func (price *PricePlugin) Do(ctx *context.Context, guildId, channelId, userId, m
 					ReqType: utils.GuildMsg,
 				}
 			}
-			err := database.ItemSave("10002", "10002", null.String{}, str5[0], null.NewString(str6[0], true), null.NewString(str6[1], true), userId, null.NewTime(time.Now(), true))
+			err := database.ItemSave("10002", "10002", null.String{}, str5[0], null.NewString(str6[0], true), null.NewString(str6[1], true), null.NewString(userId, true), null.NewTime(time.Now(), true))
 			if err != nil {
 				replyText := "添加失败"
 				log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, replyText)

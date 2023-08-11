@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -15,7 +16,7 @@ import (
 type LearnPlugin struct {
 }
 
-func (learnPlugin *LearnPlugin) Do(ctx *context.Context, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, isBot, isDirectMessage, botIsAdmin, isBotAdmin, isAdmin bool, priceSearch string, imgs []string) utils.RetStuct {
+func (learnPlugin *LearnPlugin) Do(ctx *context.Context, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, imgs []string) utils.RetStuct {
 
 	s, b := public.Prefix(msg, ".")
 	if !b {
@@ -23,7 +24,8 @@ func (learnPlugin *LearnPlugin) Do(ctx *context.Context, guildId, channelId, use
 			RetVal: utils.MESSAGE_IGNORE,
 		}
 	}
-
+	isAdmin := public.IsAdmin(useRole)
+	isBotAdmin := public.IsBotAdmin(userId)
 	ggk, _ := database.GetJudgeKeys()
 	containsJudgeKeys := database.Judge(msg, *ggk.JudgekeysSync)
 	if containsJudgeKeys != "" && !isBotAdmin {
@@ -39,17 +41,19 @@ func (learnPlugin *LearnPlugin) Do(ctx *context.Context, guildId, channelId, use
 	}
 
 	if public.StartsWith(s, "#+") && (isBotAdmin || isAdmin) {
-		suspectedUrl := strings.Split(s, ".")
-		if len(suspectedUrl) > 1 && !isBotAdmin {
-			if suspectedUrl[0] != "" && suspectedUrl[1] != "" && !isBotAdmin {
-				msg := "疑似网址(暂不支持网址)，已被拦截"
-				log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, msg)
-				return utils.RetStuct{
-					RetVal: utils.MESSAGE_BLOCK,
-					ReplyMsg: &utils.Msg{
-						Text: msg,
-					},
-					ReqType: utils.GuildMsg,
+		if !isBotAdmin {
+			suspectedUrl := strings.Split(s, ".")
+			if len(suspectedUrl) > 1 && !isBotAdmin {
+				if suspectedUrl[0] != "" && suspectedUrl[1] != "" {
+					msg := "疑似网址(暂不支持网址)，已被拦截"
+					log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, msg)
+					return utils.RetStuct{
+						RetVal: utils.MESSAGE_BLOCK,
+						ReplyMsg: &utils.Msg{
+							Text: msg,
+						},
+						ReqType: utils.GuildMsg,
+					}
 				}
 			}
 		}
@@ -108,6 +112,7 @@ func (learnPlugin *LearnPlugin) Do(ctx *context.Context, guildId, channelId, use
 		}
 		ans := str3[1] + iua
 		err := database.LearnSave(strings.TrimSpace(str3[0]), guildId, channelId, userId, null.NewString(ans, true), time.Now(), true)
+		fmt.Println(err)
 		if err != nil {
 			replyText := "添加失败"
 			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, replyText)
@@ -130,20 +135,6 @@ func (learnPlugin *LearnPlugin) Do(ctx *context.Context, guildId, channelId, use
 		}
 	}
 	if public.StartsWith(s, "++") && isBotAdmin {
-		suspectedUrl := strings.Split(s, ".")
-		if len(suspectedUrl) > 1 {
-			if suspectedUrl[0] != "" && suspectedUrl[1] != "" && !isBotAdmin {
-				msg := "疑似网址(暂不支持网址)，已被拦截"
-				log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, msg)
-				return utils.RetStuct{
-					RetVal: utils.MESSAGE_BLOCK,
-					ReplyMsg: &utils.Msg{
-						Text: msg,
-					},
-					ReqType: utils.GuildMsg,
-				}
-			}
-		}
 		str2 := strings.TrimSpace(strings.TrimPrefix(s, "++"))
 		str3 := strings.Split(str2, "##")
 		if len(str3) != 2 {
@@ -199,6 +190,7 @@ func (learnPlugin *LearnPlugin) Do(ctx *context.Context, guildId, channelId, use
 		}
 		ans := str3[1] + iua
 		err := database.LearnSave(strings.TrimSpace(str3[0]), "sys", "sys", userId, null.NewString(ans, true), time.Now(), true)
+		fmt.Println(err)
 		if err != nil {
 			replyText := "系统问答添加失败"
 			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, replyText)
@@ -232,15 +224,16 @@ func (learnPlugin *LearnPlugin) Do(ctx *context.Context, guildId, channelId, use
 		}
 	}
 	learn_get, err := database.LearnGet(guildId, channelId, strings.TrimSpace(s))
-	//log.Println(learn_get.LearnSync.Answer.String,"ceshil", err)
-	if err != nil || learn_get.LearnSync.Answer.String == "" {
+	log.Println(learn_get.Answer.String, "ceshil", err)
+	if err != nil || learn_get.Answer.String == "" {
 		imgs := []string{}
-		sys_learn_get, _ := database.LearnGet("sys", "sys", strings.TrimSpace(s))
-		if sys_learn_get.LearnSync.Answer.String != "" {
-			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, sys_learn_get.LearnSync.Answer.String)
-			if public.Contains(sys_learn_get.LearnSync.Answer.String, "#url#") {
+		sys_learn_get, err := database.LearnGet("sys", "sys", strings.TrimSpace(s))
+		log.Println(sys_learn_get.Answer.String, "ceshilsys", err)
+		if sys_learn_get.Answer.String != "" {
+			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, sys_learn_get.Answer.String)
+			if public.Contains(sys_learn_get.Answer.String, "#url#") {
 				anst := ""
-				anscontainimg := strings.Split(sys_learn_get.LearnSync.Answer.String, "#url#")
+				anscontainimg := strings.Split(sys_learn_get.Answer.String, "#url#")
 				for i, aci := range anscontainimg {
 					if i > 0 {
 						imgs = append(imgs, aci)
@@ -260,17 +253,17 @@ func (learnPlugin *LearnPlugin) Do(ctx *context.Context, guildId, channelId, use
 			return utils.RetStuct{
 				RetVal: utils.MESSAGE_BLOCK,
 				ReplyMsg: &utils.Msg{
-					Text: sys_learn_get.LearnSync.Answer.String,
+					Text: sys_learn_get.Answer.String,
 				},
 				ReqType: utils.GuildMsg,
 			}
 		}
 	}
-	if learn_get.LearnSync.Answer.String != "" {
-		log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, learn_get.LearnSync.Answer.String)
-		if public.Contains(learn_get.LearnSync.Answer.String, "#url#") {
+	if learn_get.Answer.String != "" {
+		log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, learn_get.Answer.String)
+		if public.Contains(learn_get.Answer.String, "#url#") {
 			anst := ""
-			anscontainimg := strings.Split(learn_get.LearnSync.Answer.String, "#url#")
+			anscontainimg := strings.Split(learn_get.Answer.String, "#url#")
 			for i, aci := range anscontainimg {
 				if i > 0 {
 					imgs = append(imgs, aci)
@@ -290,7 +283,7 @@ func (learnPlugin *LearnPlugin) Do(ctx *context.Context, guildId, channelId, use
 		return utils.RetStuct{
 			RetVal: utils.MESSAGE_BLOCK,
 			ReplyMsg: &utils.Msg{
-				Text: learn_get.LearnSync.Answer.String,
+				Text: learn_get.Answer.String,
 			},
 			ReqType: utils.GuildMsg,
 		}

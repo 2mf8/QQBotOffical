@@ -1,5 +1,14 @@
 package database
 
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"strconv"
+)
+
 type Info struct {
 	Msg                  string `json:"msg"`
 	PageLast             bool   `json:"pageLast"`
@@ -45,7 +54,7 @@ type PeopleRankInfo struct {
 	WorldRank     int    `json:"worldRank"`
 }
 
-/*func convertTime(result int, eventId string) string {
+func convertTime(result int, eventId string) string {
 	if result == -1 {
 		return "DNF"
 	} else if result == -2 {
@@ -80,9 +89,9 @@ type PeopleRankInfo struct {
 	}
 }
 
-func wcaPersonHandler(s string) string {
-	singleUrl := "http://www.2mf8.cn:8083/wcaSingle/findBestResultsByPersonId?personId=" + url.QueryEscape(s)
-	averageUrl := "http://www.2mf8.cn:8083/wcaAverage/findBestResultsByPersonId?personId=" + url.QueryEscape(s)
+func WcaPersonHandler(s string) string {
+	singleUrl := "http://www.2mf8.cn:8100/wcaSingle/findBestResultsByPersonId?personId=" + url.QueryEscape(s)
+	averageUrl := "http://www.2mf8.cn:8100/wcaAverage/findBestResultsByPersonId?personId=" + url.QueryEscape(s)
 	resp1, _ := http.Get(singleUrl)
 	body1, _ := io.ReadAll(resp1.Body)
 	resp1.Body.Close()
@@ -105,10 +114,10 @@ func wcaPersonHandler(s string) string {
 		}
 	}
 	return result
-}*/
+}
 
 /*func main() {
-	url := "http://www.2mf8.cn:8083/wcaPerson/searchPeople?q=" + url.QueryEscape("2017WANY29")
+	url := "http://www.2mf8.cn:8100/wcaPerson/searchPeople?q=" + url.QueryEscape("2017WANY29")
 	resp, _ := http.Get(url)
 	s := Info{}
 	gen := ""
