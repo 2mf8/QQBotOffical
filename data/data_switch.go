@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/2mf8/QQBotOffical/config"
 	"github.com/2mf8/QQBotOffical/public"
 	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/gomodule/redigo/redis"
@@ -32,6 +33,7 @@ const (
 	PluginBlock                       // 个人屏蔽
 	PluginSwitch                      // 开关
 	PluginRepeat                      // 复读
+	PluginWCA                         // WCA
 	PluginReply                       // 回复
 	PluginAdmin                       // 频道管理
 	PluginPrice                       // 查价
@@ -44,6 +46,7 @@ var IntentMap = map[intent]string{
 	PluginBlock:    "屏蔽",
 	PluginSwitch:   "开关",
 	PluginRepeat:   "复读",
+	PluginWCA:      "WCA",
 	PluginReply:    "回复",
 	PluginAdmin:    "频道管理",
 	PluginPrice:    "查价",
@@ -56,6 +59,7 @@ var SwitchMap = map[string]intent{
 	"屏蔽":   PluginBlock,
 	"开关":   PluginSwitch,
 	"复读":   PluginRepeat,
+	"WCA":  PluginWCA,
 	"回复":   PluginReply,
 	"频道管理": PluginAdmin,
 	"查价":   PluginPrice,
@@ -64,13 +68,13 @@ var SwitchMap = map[string]intent{
 }
 
 func (bot_switch *Switch) SwitchCreate() (err error) {
-	statement := "insert into [kequ5060].[dbo].[guild_switch] values ($1, $2, $3, $4, $5) select @@identity"
+	statement := "insert into [$6].[dbo].[guild_switch] values ($1, $2, $3, $4, $5) select @@identity"
 	stmt, err := Db.Prepare(statement)
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
-	err = stmt.QueryRow(bot_switch.GuildId, bot_switch.ChannelId, bot_switch.IsCloseOrGuard, bot_switch.AdminId, bot_switch.GmtModified).Scan(&bot_switch.Id)
+	err = stmt.QueryRow(bot_switch.GuildId, bot_switch.ChannelId, bot_switch.IsCloseOrGuard, bot_switch.AdminId, bot_switch.GmtModified, config.Conf.DatabaseName).Scan(&bot_switch.Id)
 
 	bot_switch_sync := SwitchSync{
 		IsTrue: true,
@@ -106,7 +110,7 @@ func (bot_switch *Switch) SwitchCreate() (err error) {
 
 func (bot_switch *Switch) SwitchUpdate(isCloseOrGuard int64, adminId string, gmtModified time.Time) (err error) {
 
-	_, err = Db.Exec("update [kequ5060].[dbo].[guild_switch] set guild_id = $2, channel_id = $3, is_close_or_guard = $4, admin_id = $5, gmt_modified = $6 where ID = $1", bot_switch.Id, bot_switch.GuildId, bot_switch.ChannelId, isCloseOrGuard, adminId, gmtModified)
+	_, err = Db.Exec("update [$7].[dbo].[guild_switch] set guild_id = $2, channel_id = $3, is_close_or_guard = $4, admin_id = $5, gmt_modified = $6 where ID = $1", bot_switch.Id, bot_switch.GuildId, bot_switch.ChannelId, isCloseOrGuard, adminId, gmtModified, config.Conf.DatabaseName)
 	if err != nil {
 		return err
 	}
@@ -174,7 +178,7 @@ func SwitchSave(guildId, channelId, adminId string, isCloseOrGuard int64, gmtMod
 
 // SDBGI SwitchDeleteByGuildIdAndChannelId
 func SDBGIACI(guildId, channelId string) (err error) {
-	_, err = Db.Exec("delete [kequ5060].[dbo].[guild_switch] where guild_id = $1 and channel_id = $2", guildId, channelId)
+	_, err = Db.Exec("delete [$3].[dbo].[guild_switch] where guild_id = $1 and channel_id = $2", guildId, channelId, config.Conf.DatabaseName)
 	if err != nil {
 		return err
 	}
@@ -204,7 +208,7 @@ func SGBGIACI(guildId, channelId string) (bot_switch_sync SwitchSync, err error)
 	if err != nil {
 		log.Println(err)
 		fmt.Println("[查询] 首次查询-开关", bw)
-		err = Db.QueryRow("select ID, guild_id, channel_id, is_close_or_guard, admin_id, gmt_modified from [kequ5060].[dbo].[guild_switch] where guild_id = $1 and channel_id = $2", guildId, channelId).Scan(&bot_switch_sync.PluginSwitch.Id, &bot_switch_sync.PluginSwitch.GuildId, &bot_switch_sync.PluginSwitch.ChannelId, &bot_switch_sync.PluginSwitch.IsCloseOrGuard, &bot_switch_sync.PluginSwitch.AdminId, &bot_switch_sync.PluginSwitch.GmtModified)
+		err = Db.QueryRow("select ID, guild_id, channel_id, is_close_or_guard, admin_id, gmt_modified from [$3].[dbo].[guild_switch] where guild_id = $1 and channel_id = $2", guildId, channelId, config.Conf.DatabaseName).Scan(&bot_switch_sync.PluginSwitch.Id, &bot_switch_sync.PluginSwitch.GuildId, &bot_switch_sync.PluginSwitch.ChannelId, &bot_switch_sync.PluginSwitch.IsCloseOrGuard, &bot_switch_sync.PluginSwitch.AdminId, &bot_switch_sync.PluginSwitch.GmtModified)
 		info := fmt.Sprintf("%s", err)
 		if public.StartsWith(info, "sql") || public.StartsWith(info, "unable") {
 			if public.StartsWith(info, "unable") {

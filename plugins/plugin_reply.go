@@ -9,7 +9,7 @@ import (
 type Reply struct {
 }
 
-func (rep *Reply) Do(ctx *context.Context, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, attachments []string) utils.RetStuct {
+func (rep *Reply) Do(ctx *context.Context, admins []string, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, attachments []string) utils.RetStuct {
 	return utils.RetStuct{
 		RetVal: utils.MESSAGE_IGNORE,
 	}

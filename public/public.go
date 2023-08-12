@@ -8,25 +8,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-
-	"github.com/2mf8/QQBotOffical/config"
-	"github.com/BurntSushi/toml"
 )
-
-type DataBase struct {
-	User     string
-	Password string
-	Url      string
-	Port     int
-}
-
-type Redis struct {
-	Url      string
-	Port     int
-	Password string
-	Table    int
-	PoolSize int
-}
 
 type PluginConfig struct {
 	Conf []string
@@ -77,88 +59,13 @@ func IsCompAdmin(roles []string) bool {
 	return false
 }
 
-func TbotConf() (c PluginConfig, err error) {
-	_, err = toml.DecodeFile("conf.toml", config.Conf)
-	pc := PluginConfig{
-		Conf: config.Conf.Plugins,
-	}
-	return pc, err
-}
-
-func BotLoginInfo() (c BotLogin, err error) {
-	_, err = toml.DecodeFile("conf.toml", config.Conf)
-	pc := BotLogin{
-		AppId:       config.Conf.AppId,
-		AccessToken: config.Conf.AccessToken,
-	}
-	return pc, err
-}
-
-func IsBotAdmin(userId string) bool {
-	_, _ = toml.DecodeFile("conf.toml", config.Conf)
-	for _, uId := range config.Conf.Admins {
+func IsBotAdmin(userId string, admins []string) bool {
+	for _, uId := range admins {
 		if userId == uId {
 			return true
 		}
 	}
 	return false
-}
-
-func DataBaseSet() (dbset DataBase, err error) {
-	var user string
-	var password string
-	var url string
-	var port int = 0
-	_, err = toml.DecodeFile("conf.toml", config.Conf)
-	if config.Conf.DatabaseUser == "" {
-		user = "sa"
-	} else {
-		user = config.Conf.DatabaseUser
-	}
-	if config.Conf.DatabasePassword == "" {
-		password = "@#$mima45"
-	} else {
-		password = config.Conf.DatabasePassword
-	}
-	if config.Conf.DatabaseServer == "" {
-		url = "127.0.0.1"
-	} else {
-		url = config.Conf.ScrambleServer
-	}
-	port = config.Conf.DatabasePort
-	dbset = DataBase{
-		User:     user,
-		Password: password,
-		Url:      url,
-		Port:     port,
-	}
-	return
-}
-
-func RedisSet() (dbset Redis, err error) {
-	var url string
-	var port int = 0
-	var password string
-	var table int
-	var poolSize int
-	_, err = toml.DecodeFile("conf.toml", config.Conf)
-	if config.Conf.RedisServer == "" {
-		url = "127.0.0.1"
-	} else {
-		url = config.Conf.RedisServer
-	}
-	password = config.Conf.RedisPassword
-	port = config.Conf.RedisPort
-	table = config.Conf.RedisTable
-	poolSize = config.Conf.RedisPoolSize
-	dbset = Redis{
-		Url:      url,
-		Port:     port,
-		Password: password,
-		Table:    table,
-		PoolSize: poolSize,
-	}
-	return
 }
 
 func IsConnErr(err error) bool {

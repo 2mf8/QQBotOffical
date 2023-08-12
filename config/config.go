@@ -1,5 +1,9 @@
 package config
 
+import (
+	"github.com/BurntSushi/toml"
+)
+
 type Config struct {
 	Plugins          []string
 	AppId            uint64
@@ -9,6 +13,7 @@ type Config struct {
 	DatabasePassword string
 	DatabasePort     int
 	DatabaseServer   string
+	DatabaseName     string
 	ServerPort       int
 	ScrambleServer   string
 	RedisServer      string
@@ -18,8 +23,12 @@ type Config struct {
 	RedisPoolSize    int
 }
 
-var Conf *Config
+var Conf *Config = &Config{}
 
-func init() {
-	Conf = &Config{}
+func AllConfig() Config {
+	_, err := toml.DecodeFile("conf.toml", Conf)
+	if err != nil {
+		return *Conf
+	}
+	return *Conf
 }

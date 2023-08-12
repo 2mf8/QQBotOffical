@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 
+	"github.com/2mf8/QQBotOffical/config"
 	_ "github.com/denisenkom/go-mssqldb"
 	"gopkg.in/guregu/null.v3"
 	_ "gopkg.in/guregu/null.v3/zero"
@@ -22,12 +23,12 @@ type CuberPrice struct {
 
 func GetItem(guildId, channelId string, item string) (cp CuberPrice, err error) {
 	cp = CuberPrice{}
-	err = Db.QueryRow("select ID, guild_id, channel_id, brand, item, price, shipping, updater, gmt_modified from [kequ5060].[dbo].[guild_price] where guild_id = $1 and channel_id = $3 and item = $2", guildId, item, channelId).Scan(&cp.Id, &cp.GuildId, &cp.ChannelId, &cp.Brand, &cp.Item, &cp.Price, &cp.Shipping, &cp.Updater, &cp.GmtModified)
+	err = Db.QueryRow("select ID, guild_id, channel_id, brand, item, price, shipping, updater, gmt_modified from [$4].[dbo].[guild_price] where guild_id = $1 and channel_id = $3 and item = $2", guildId, item, channelId, config.Conf.DatabaseName).Scan(&cp.Id, &cp.GuildId, &cp.ChannelId, &cp.Brand, &cp.Item, &cp.Price, &cp.Shipping, &cp.Updater, &cp.GmtModified)
 	return
 }
 
 func GetItems(guildId, channelId string, key string) (cps []CuberPrice, err error) {
-	statment := fmt.Sprintf("select ID, guild_id, channel_id, brand, item, price, shipping, updater, gmt_modified from [kequ5060].[dbo].[guild_price] where guild_id = '%s' and channel_id = '%s' and item like '%%%s%%'", guildId, channelId, key)
+	statment := fmt.Sprintf("select ID, guild_id, channel_id, brand, item, price, shipping, updater, gmt_modified from [%s].[dbo].[guild_price] where guild_id = '%s' and channel_id = '%s' and item like '%%%s%%'", config.Conf.DatabaseName, guildId, channelId, key)
 	rows, err := Db.Query(statment)
 	if err != nil {
 		return
@@ -42,23 +43,23 @@ func GetItems(guildId, channelId string, key string) (cps []CuberPrice, err erro
 }
 
 func (cp *CuberPrice) ItemCreate() (err error) {
-	statement := "insert into [kequ5060].[dbo].[guild_price] values ($1, $2, $3, $4, $5, $6, $7, $8) select @@identity"
+	statement := "insert into [$9].[dbo].[guild_price] values ($1, $2, $3, $4, $5, $6, $7, $8) select @@identity"
 	stmt, err := Db.Prepare(statement)
 	if err != nil {
 		return
 	}
 	defer stmt.Close()
-	err = stmt.QueryRow(cp.GuildId, cp.ChannelId, cp.Brand, cp.Item, cp.Price, cp.Shipping, cp.Updater, cp.GmtModified).Scan(&cp.Id)
+	err = stmt.QueryRow(cp.GuildId, cp.ChannelId, cp.Brand, cp.Item, cp.Price, cp.Shipping, cp.Updater, cp.GmtModified, config.Conf.DatabaseName).Scan(&cp.Id)
 	return
 }
 
 func (cp *CuberPrice) ItemUpdate(price null.String, shipping null.String) (err error) {
-	_, err = Db.Exec("update [kequ5060].[dbo].[guild_price] set guild_id = $2, channel_id = $9, brand = $3, item = $4, price = $5, shipping = $6, updater = $7, gmt_modified = $8 where ID = $1", cp.Id, cp.GuildId, cp.Brand, cp.Item, price.String, shipping.String, cp.Updater, cp.GmtModified, cp.ChannelId)
+	_, err = Db.Exec("update [$10].[dbo].[guild_price] set guild_id = $2, channel_id = $9, brand = $3, item = $4, price = $5, shipping = $6, updater = $7, gmt_modified = $8 where ID = $1", cp.Id, cp.GuildId, cp.Brand, cp.Item, price.String, shipping.String, cp.Updater, cp.GmtModified, cp.ChannelId, config.Conf.DatabaseName)
 	return
 }
 
 func (cp *CuberPrice) ItemDeleteById() (err error) {
-	_, err = Db.Exec("delete from [kequ5060].[dbo].[guild_price] where ID = $1", cp.Id)
+	_, err = Db.Exec("delete from [$2].[dbo].[guild_price] where ID = $1", cp.Id, config.Conf.DatabaseName)
 	return
 }
 

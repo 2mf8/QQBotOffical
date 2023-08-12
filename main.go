@@ -12,7 +12,6 @@ import (
 	"time"
 
 	database "github.com/2mf8/QQBotOffical/data"
-	"github.com/2mf8/QQBotOffical/plugins"
 	_ "github.com/2mf8/QQBotOffical/plugins"
 	"github.com/2mf8/QQBotOffical/public"
 	"github.com/2mf8/QQBotOffical/utils"
@@ -30,15 +29,42 @@ import (
 
 func main() {
 	InitLog()
+
+	tomlData := `
+	Plugins = ["守卫","开关","复读","WCA","回复","频道管理","赛季","查价","打乱","学习"]   # 插件管理
+	AppId = 0 # 机器人AppId
+	AccessToken = "" # 机器人AccessToken
+	Admins = [""]   # 机器人管理员管理
+	DatabaseUser = "sa"   # MSSQL数据库用户名
+	DatabasePassword = ""   # MSSQL数据库密码
+	DatabasePort = 1433   # MSSQL数据库服务端口
+	DatabaseServer = "127.0.0.1"   # MSSQL数据库服务网址
+	DatabaseName = ""  # 数据库名
+	ServerPort = 8081   # 服务端口
+	ScrambleServer = "http://localhost:2014"   # 打乱服务地址
+	RedisServer = "127.0.0.1" # Redis服务网址
+	RedisPort = 6379 # Redis端口
+	RedisPassword = "" # Redis密码
+	RedisTable = 0 # Redis数据表
+	RedisPoolSize = 1000 # Redis连接池数量
+	`
+
 	log.Infoln("欢迎您使用QQBotOffical")
 	_, err := os.Stat("conf.toml")
 	if err != nil {
-		_ = os.WriteFile("conf.toml", []byte("Plugins = [\"守卫\",\"屏蔽\",\"开关\",\"复读\",\"回复\",\"频道管理\",\"赛季\",\"查价\",\"打乱\",\"学习\"]   # 插件管理\nAppId = 0   # 机器人AppId\nAccessToken = \"\"   # 机器人AccessToken\nAdmins = []   # 机器人管理员管理\nDatabaseUser = \"\"   # MSSQL数据库用户名\nDatabasePassword = \"\"   # MSSQL数据库密码\nDatabasePort = 1433   # MSSQL数据库服务端口\nDatabaseServer = \"127.0.0.1\"   # MSSQL数据库服务网址\nServerPort = 8081   # 服务端口\nScrambleServer = \"http://localhost:2014\"   # 打乱服务地址"), 0644)
+		_ = os.WriteFile("conf.toml", []byte(tomlData), 0644)
+		log.Warn("已生成配置文件 conf.toml ,请修改后重新启动程序。")
+		log.Info("该程序将于5秒后退出！")
+		time.Sleep(time.Second * 5)
 		os.Exit(1)
 	}
-	plugin, _ := public.TbotConf()
-	pluginString := fmt.Sprintf("%s", plugin.Conf)
-	botLoginInfo, _ := public.BotLoginInfo()
+	allconfig := database.AllConfig
+	log.Info("[配置信息]", allconfig)
+	pluginString := fmt.Sprintf("%s", allconfig.Plugins)
+	botLoginInfo := &public.BotLogin{
+		AppId:       allconfig.AppId,
+		AccessToken: allconfig.AccessToken,
+	}
 	log.Infof("已加载插件 %s", pluginString)
 
 	token := token.BotToken(botLoginInfo.AppId, botLoginInfo.AccessToken)
@@ -46,6 +72,9 @@ func main() {
 	ctx := context.Background()
 	ws, err := api.WS(ctx, nil, "")
 	if err != nil {
+		log.Warn("登录失败，请检查 appid 和 AccessToken 是否正确。")
+		log.Info("该程序将于5秒后退出！")
+		time.Sleep(time.Second * 5)
 		log.Printf("%+v, err:%v", ws, err)
 	}
 	// 监听哪类事件就需要实现哪类的 handler，定义：websocket/event_handler.go
@@ -76,7 +105,7 @@ func main() {
 		roles := data.Member.Roles
 		br, _ := api.GuildMember(ctx, guildId, me.ID)
 		botIsAdmin := public.IsAdmin(br.Roles)
-		isBotAdmin := public.IsBotAdmin(userId)
+		isBotAdmin := public.IsBotAdmin(userId, allconfig.Admins)
 		rawMsg := strings.TrimSpace(strings.ReplaceAll(msg, atBot, ""))
 		reg1 := regexp.MustCompile("％")
 		reg2 := regexp.MustCompile("＃")
@@ -88,7 +117,7 @@ func main() {
 		rawMsg = strings.TrimSpace(reg2.ReplaceAllString(rawMsg, "#"))
 		rawMsg = strings.TrimSpace(reg3.ReplaceAllString(rawMsg, "?"))
 
-		fmt.Println("通过？", plugins.Pass(roles))
+		// fmt.Println("通过？", plugins.Pass(roles))
 
 		if len(rolesMap[guildId]) == 0 {
 			var gRoles []string
@@ -116,7 +145,7 @@ func main() {
 				}
 			}
 			rolesMap[guildId] = gRoles
-			fmt.Println(rolesMap)
+			// fmt.Println(rolesMap)
 			api.PostMessage(ctx, channelId, &dto.MessageToCreate{Content: "更新成功"})
 		}
 
@@ -170,9 +199,9 @@ func main() {
 		} else {
 			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) <- %s %s", guildId, channelId, userId, rawMsg, imgStr)
 		}
-		ctx := context.WithValue(context.Background(), botLoginInfo, plugin)
+		ctx := context.WithValue(context.Background(), botLoginInfo, allconfig.Plugins)
 		sg, _ := database.SGBGIACI(guildId, channelId)
-		for _, i := range plugin.Conf {
+		for _, i := range allconfig.Plugins {
 			intent := sg.PluginSwitch.IsCloseOrGuard & int64(database.PluginNameToIntent(i))
 			if intent == int64(database.PluginReply) {
 				break
@@ -180,7 +209,7 @@ func main() {
 			if intent > 0 {
 				continue
 			}
-			retStuct := utils.PluginSet[i].Do(&ctx, rolesMap, guildId, channelId, userId, rawMsg, msgId, username, avatar, srcGuildID, roles, isBot, isDirectMessage, botIsAdmin, priceSearch, imgs)
+			retStuct := utils.PluginSet[i].Do(&ctx, allconfig.Admins, rolesMap, guildId, channelId, userId, rawMsg, msgId, username, avatar, srcGuildID, roles, isBot, isDirectMessage, botIsAdmin, priceSearch, imgs)
 			if retStuct.RetVal == utils.MESSAGE_BLOCK {
 				if retStuct.ReqType == utils.GuildMsg {
 					if retStuct.ReplyMsg != nil {
@@ -511,26 +540,30 @@ func main() {
 	}
 
 	var dm event.DirectMessageEventHandler = func(event *dto.WSPayload, data *dto.WSDirectMessageData) error {
-		fmt.Println(event.Data)
-		fmt.Println(data.GuildID, data.ChannelID, data.Content, data.ID)
-		fmt.Println(data.Author.ID, data.Author.Username)
-		fmt.Println(data.SrcGuildID)
+		//fmt.Println(event.Data)
+		//fmt.Println(data.GuildID, data.ChannelID, data.Content, data.ID)
+		//fmt.Println(data.Author.ID, data.Author.Username)
+		// fmt.Println(data.SrcGuildID)
 		gs, _ := api.MeGuilds(ctx, &dto.GuildPager{})
-		member, err := api.GuildMember(ctx, gs[1].ID, data.Author.ID)
-		if err != nil || member == nil {
-			log.Warnf("%s(%s) 不是频道 %s(%s) 成员，无法发送私信消息", data.Author.Username, data.Author.ID, gs[1].Name, gs[1].ID)
-			return nil
+
+		for _, g := range gs {
+			member, err := api.GuildMember(ctx, g.ID, data.Author.ID)
+			if err != nil || member == nil {
+				log.Warnf("%s(%s) 不是频道 %s(%s) 成员，无法发送私信消息", data.Author.Username, data.Author.ID, g.Name, g.ID)
+				continue
+			}
+			log.Infof("GuildId(%s) UserId(%s)：%s", g.ID, data.Author.ID, data.Content)
+			dmsg, err := api.CreateDirectMessage(ctx, &dto.DirectMessageToCreate{
+				SourceGuildID: g.ID,
+				RecipientID:   data.Author.ID,
+			})
+			if err != nil {
+				log.Warn("私信出错了，err = ", err)
+				continue
+			}
+			api.PostDirectMessage(ctx, dmsg, &dto.MessageToCreate{Content: "hello", MsgID: data.ID})
+			break
 		}
-		log.Infof("GuildId(%s) UserId(%s)：%s", gs[1].ID, data.Author.ID, data.Content)
-		dmsg, err := api.CreateDirectMessage(ctx, &dto.DirectMessageToCreate{
-			SourceGuildID: gs[1].ID,
-			RecipientID:   data.Author.ID,
-		})
-		if err != nil {
-			log.Warnf("私信出错了，err = ", err)
-			return nil
-		}
-		api.PostDirectMessage(ctx, dmsg, &dto.MessageToCreate{Content: "hello", MsgID: data.ID})
 		return nil
 	}
 

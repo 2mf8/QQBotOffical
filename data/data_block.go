@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/2mf8/QQBotOffical/config"
 	"github.com/2mf8/QQBotOffical/public"
 	_ "github.com/denisenkom/go-mssqldb"
 	_ "gopkg.in/guregu/null.v3/zero"
@@ -20,7 +21,7 @@ type PBlock struct {
 
 func PBlockGet(guildId, userId string) (p PBlock, err error) {
 	pblock := PBlock{}
-	err = Db.QueryRow("select ID, guild_id, user_id, admin_id, gmt_modified, ispblock from [kequ5060].[dbo].[guild_pblock] where user_id = $1 and ispblock = $2 and guild_id = $3", userId, true, guildId).Scan(&pblock.Id, &pblock.GuildId, &pblock.UserId, &pblock.AdminId, &pblock.GmtModified, &pblock.IsPBlock)
+	err = Db.QueryRow("select ID, guild_id, user_id, admin_id, gmt_modified, ispblock from [$4].[dbo].[guild_pblock] where user_id = $1 and ispblock = $2 and guild_id = $3", userId, true, guildId, config.Conf.DatabaseName).Scan(&pblock.Id, &pblock.GuildId, &pblock.UserId, &pblock.AdminId, &pblock.GmtModified, &pblock.IsPBlock)
 	info := fmt.Sprintf("%s", err)
 	if public.StartsWith(info, "sql") || public.StartsWith(info, "unable") {
 		if public.StartsWith(info, "unable") {
@@ -32,18 +33,18 @@ func PBlockGet(guildId, userId string) (p PBlock, err error) {
 }
 
 func (pBlock *PBlock) PBlockCreate() (err error) {
-	statement := "insert into [kequ5060].[dbo].[guild_pblock] values ($1, $2, $3, $4, $5) select @@identity"
+	statement := "insert into [$6].[dbo].[guild_pblock] values ($1, $2, $3, $4, $5) select @@identity"
 	stmt, err := Db.Prepare(statement)
 	if err != nil {
 		return
 	}
 	defer stmt.Close()
-	err = stmt.QueryRow(pBlock.GuildId, pBlock.UserId, pBlock.AdminId, pBlock.GmtModified, pBlock.IsPBlock).Scan(&pBlock.Id)
+	err = stmt.QueryRow(pBlock.GuildId, pBlock.UserId, pBlock.AdminId, pBlock.GmtModified, pBlock.IsPBlock, config.Conf.DatabaseName).Scan(&pBlock.Id)
 	return
 }
 
 func (pBlock *PBlock) PBlockUpdate(ispblock bool) (err error) {
-	_, err = Db.Exec("update [kequ5060].[dbo].[guild_pblock] set guild_id = $2, user_id = $3, ispblock = $4, admin_id = $5, gmt_modified = $6 where ID = $1", pBlock.Id, pBlock.GuildId, pBlock.UserId, pBlock.IsPBlock, pBlock.AdminId, pBlock.GmtModified)
+	_, err = Db.Exec("update [$7].[dbo].[guild_pblock] set guild_id = $2, user_id = $3, ispblock = $4, admin_id = $5, gmt_modified = $6 where ID = $1", pBlock.Id, pBlock.GuildId, pBlock.UserId, pBlock.IsPBlock, pBlock.AdminId, pBlock.GmtModified, config.Conf.DatabaseName)
 	return
 }
 

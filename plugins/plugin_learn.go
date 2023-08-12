@@ -16,7 +16,7 @@ import (
 type LearnPlugin struct {
 }
 
-func (learnPlugin *LearnPlugin) Do(ctx *context.Context, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, imgs []string) utils.RetStuct {
+func (learnPlugin *LearnPlugin) Do(ctx *context.Context, admins []string, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, imgs []string) utils.RetStuct {
 
 	s, b := public.Prefix(msg, ".")
 	if !b {
@@ -25,7 +25,7 @@ func (learnPlugin *LearnPlugin) Do(ctx *context.Context, gmap map[string][]strin
 		}
 	}
 	isAdmin := public.IsAdmin(useRole)
-	isBotAdmin := public.IsBotAdmin(userId)
+	isBotAdmin := public.IsBotAdmin(userId, admins)
 	ggk, _ := database.GetJudgeKeys()
 	containsJudgeKeys := database.Judge(msg, *ggk.JudgekeysSync)
 	if containsJudgeKeys != "" && !isBotAdmin {

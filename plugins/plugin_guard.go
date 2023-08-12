@@ -15,7 +15,7 @@ import (
 type Guard struct {
 }
 
-func (guard *Guard) Do(ctx *context.Context, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, attachments []string) utils.RetStuct {
+func (guard *Guard) Do(ctx *context.Context, admins []string, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, attachments []string) utils.RetStuct {
 	if !botIsAdmin {
 		return utils.RetStuct{
 			RetVal: utils.MESSAGE_IGNORE,
@@ -23,7 +23,7 @@ func (guard *Guard) Do(ctx *context.Context, gmap map[string][]string, guildId, 
 	}
 	isAdmin := public.IsAdmin(useRole)
 	isCommonMember := IsCommonMember(guildId, gmap, useRole)
-	isBotAdmin := public.IsBotAdmin(userId)
+	isBotAdmin := public.IsBotAdmin(userId, admins)
 	guardIntent := int64(database.PluginGuard)
 	sg, _ := database.SGBGIACI(guildId, channelId)
 	isGuard := sg.PluginSwitch.IsCloseOrGuard & guardIntent

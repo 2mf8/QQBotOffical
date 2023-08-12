@@ -39,7 +39,7 @@ type Msg struct {
 }
 
 type Plugin interface {
-	Do(ctx *context.Context, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, attachments []string) (retStuct RetStuct)
+	Do(ctx *context.Context, admins []string, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, attachments []string) (retStuct RetStuct)
 }
 
 var PluginSet map[string]Plugin
