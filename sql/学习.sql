@@ -1,7 +1,7 @@
 USE [kequ5060]
 GO
 
-/****** Object:  Table [dbo].[guild_learn]    Script Date: 2022/6/6 10:56:45 ******/
+/****** Object:  Table [dbo].[guild_learn]    Script Date: 2023/8/12 19:38:27 ******/
 SET ANSI_NULLS ON
 GO
 
@@ -16,7 +16,11 @@ CREATE TABLE [dbo].[guild_learn](
 	[admin_id] [varchar](32) NULL,
 	[answer] [nvarchar](2000) NULL,
 	[gmt_modified] [datetime2](7) NULL,
-	[pass] [bit] NULL
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+	[pass] [bit] NULL,
+ CONSTRAINT [PK_guild_learn] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
 GO
 

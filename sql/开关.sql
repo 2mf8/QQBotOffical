@@ -1,7 +1,7 @@
 USE [kequ5060]
 GO
 
-/****** Object:  Table [dbo].[guild_switch]    Script Date: 2022/7/10 17:35:56 ******/
+/****** Object:  Table [dbo].[guild_switch]    Script Date: 2023/8/12 19:36:44 ******/
 SET ANSI_NULLS ON
 GO
 
@@ -14,7 +14,7 @@ CREATE TABLE [dbo].[guild_switch](
 	[channel_id] [varchar](32) NOT NULL,
 	[is_close_or_guard] [bigint] NOT NULL,
 	[admin_id] [varchar](32) NULL,
-	[gmt_modified] [datetime2](7) NULL
+	[gmt_modified] [datetime2](7) NULL,
  CONSTRAINT [PK_guild_switch] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
