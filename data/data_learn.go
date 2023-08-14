@@ -7,6 +7,7 @@ import (
 	"github.com/2mf8/QQBotOffical/config"
 	"github.com/2mf8/QQBotOffical/public"
 	_ "github.com/denisenkom/go-mssqldb"
+	"github.com/tencent-connect/botgo/log"
 	"gopkg.in/guregu/null.v3"
 	_ "gopkg.in/guregu/null.v3/zero"
 )
@@ -24,37 +25,38 @@ type Learn struct {
 
 func LearnGet(guildId, channelId, ask string) (l Learn, err error) {
 	l = Learn{}
-	err = Db.QueryRow("select ID, ask, guild_id, channel_id, admin_id, answer, gmt_modified, pass from [$4].[dbo].[guild_learn] where guild_id = $1 and ask = $2 and channel_id = $3", guildId, ask, channelId, config.Conf.DatabaseName).Scan(&l.Id, &l.Ask, &l.GuildId, &l.ChannelId, &l.AdminId, &l.Answer, &l.GmtModified, &l.Pass)
-	fmt.Println(l, err)
+	statment := fmt.Sprintf("select ID, ask, guild_id, channel_id, admin_id, answer, gmt_modified, pass from [%s].[dbo].[guild_learn] where guild_id = $1 and ask = $2 and channel_id = $3", config.Conf.DatabaseName)
+	err = Db.QueryRow(statment, guildId, ask, channelId).Scan(&l.Id, &l.Ask, &l.GuildId, &l.ChannelId, &l.AdminId, &l.Answer, &l.GmtModified, &l.Pass)
 	info := fmt.Sprintf("%s", err)
 	if public.StartsWith(info, "sql") || public.StartsWith(info, "unable") {
 		if public.StartsWith(info, "unable") {
-			fmt.Println(info)
+			log.Warn(info)
 		}
 	}
 	return
 }
 
 func (learn *Learn) LearnCreate() (err error) {
-	statement := "insert into [$8].[dbo].[guild_learn] values ($1, $2, $3, $4, $5, $6, $7) select @@identity"
+	statement := fmt.Sprintf("insert into [%s].[dbo].[guild_learn] values ($1, $2, $3, $4, $5, $6, $7) select @@identity", config.Conf.DatabaseName)
 	stmt, err := Db.Prepare(statement)
 	if err != nil {
 		return
 	}
 	defer stmt.Close()
-	err = stmt.QueryRow(learn.Ask, learn.GuildId, learn.ChannelId, learn.AdminId, learn.Answer, learn.GmtModified, learn.Pass, config.Conf.DatabaseName).Scan(&learn.Id)
+	err = stmt.QueryRow(learn.Ask, learn.GuildId, learn.ChannelId, learn.AdminId, learn.Answer, learn.GmtModified, learn.Pass).Scan(&learn.Id)
 	return
 }
 
-func (learn *Learn) LearnUpdate(answer null.String) (err error) {
-	_, err = Db.Exec("update [$9].[dbo].[guild_learn] set ask = $2, guild_id = $3, channel_id = $4, admin_id = $5, answer = $6, gmt_modified = $7, pass = $8 where ID = $1", learn.Id, learn.Ask, learn.GuildId, learn.ChannelId, learn.AdminId, answer.String, learn.GmtModified, learn.Pass, config.Conf.DatabaseName)
-
+func (learn *Learn) LearnUpdate() (err error) {
+	statment := fmt.Sprintf("update [%s].[dbo].[guild_learn] set ask = $2, guild_id = $3, channel_id = $4, admin_id = $5, answer = $6, gmt_modified = $7, pass = $8 where ID = $1", config.Conf.DatabaseName)
+	_, err = Db.Exec(statment, learn.Id, learn.Ask, learn.GuildId, learn.ChannelId, learn.AdminId, learn.Answer.String, learn.GmtModified, learn.Pass)
 	return
 }
 
 // LearnDeleteByGuildIdAndAskAndChannelId
 func (learn *Learn) LDBGIAAACI() (err error) {
-	_, err = Db.Exec("delete from [$2].[dbo].[guild_learn] where ID = $1", learn.Id, config.Conf.DatabaseName)
+	statment := fmt.Sprintf("delete from [%s].[dbo].[guild_learn] where ID = $1", config.Conf.DatabaseName)
+	_, err = Db.Exec(statment, learn.Id)
 	return
 }
 
@@ -69,14 +71,12 @@ func LearnSave(ask, guildId, channelId, adminId string, answer null.String, gmtM
 		Pass:        pass,
 	}
 	learn_get, err := LearnGet(guildId, channelId, ask)
-	fmt.Println(learn_get, err)
 	if err != nil {
 		err = learn.LearnCreate()
-		fmt.Println("创建", err)
 		return
 	}
-	err = learn_get.LearnUpdate(answer)
-	fmt.Println("更新", err)
+	learn_get.Answer = answer
+	err = learn_get.LearnUpdate()
 	return
 }
 

@@ -21,18 +21,19 @@ type Achievement struct {
 }
 
 func (a *Achievement) AchievementCreate() (err error) {
-	statement := "insert into [$8].[dbo].[guild_achievement] values ($1, $2, $3, $4, $5, $6, $7) select @@identity"
+	statement := fmt.Sprintf("insert into [%s].[dbo].[guild_achievement] values ($1, $2, $3, $4, $5, $6, $7) select @@identity", config.Conf.DatabaseName)
 	stmt, err := Db.Prepare(statement)
 	if err != nil {
 		return
 	}
 	defer stmt.Close()
-	err = stmt.QueryRow(a.UserId, a.UserName, a.Avatar, a.Item, a.Best, a.Average, a.Session, config.Conf.DatabaseName).Scan(&a.Id)
+	err = stmt.QueryRow(a.UserId, a.UserName, a.Avatar, a.Item, a.Best, a.Average, a.Session).Scan(&a.Id)
 	return
 }
 
-func (a *Achievement) AchievementUpdate(username string, avatar null.String, best, average int) (err error) {
-	_, err = Db.Exec("update [$9].[dbo].[guild_achievement] set user_id = $2, user_name = $3, avatar = $8, item = $4, best = $5, average = $6, session = $7 where Id = $1", a.Id, a.UserId, username, a.Item, best, average, a.Session, a.Avatar, config.Conf.DatabaseName)
+func (a *Achievement) AchievementUpdate() (err error) {
+	statement := fmt.Sprintf("update [%s].[dbo].[guild_achievement] set user_id = $2, user_name = $3, avatar = $8, item = $4, best = $5, average = $6, session = $7 where Id = $1", config.Conf.DatabaseName)
+	_, err = Db.Exec(statement, a.Id, a.UserId, a.UserName, a.Item, a.Best, a.Average, a.Session, a.Avatar)
 	return
 }
 
@@ -52,48 +53,73 @@ func AchievementSave(userId, userName string, avatar null.String, item string, b
 		return
 	}
 	if a_get.Best == -1 && a_get.Average == -1 {
-		err = a_get.AchievementUpdate(userName, avatar, best, average)
+		a_get.UserName = userName
+		a_get.Avatar = avatar
+		a_get.Best = best
+		a_get.Average = average
+		err = a_get.AchievementUpdate()
 		return
 	}
 	if a_get.Best == -1 {
-		err = a_get.AchievementUpdate(userName, avatar, best, a_get.Average)
+		a_get.UserName = userName
+		a_get.Avatar = avatar
+		a_get.Best = best
+		err = a_get.AchievementUpdate()
 		return
 	}
 	if a_get.Average == -1 {
-		err = a_get.AchievementUpdate(userName, avatar, a_get.Best, average)
+		a_get.UserName = userName
+		a_get.Avatar = avatar
+		a_get.Average = average
+		err = a_get.AchievementUpdate()
 		return
 	}
 	if best < a_get.Best && average < a_get.Average {
-		err = a_get.AchievementUpdate(userName, avatar, best, average)
+		a_get.UserName = userName
+		a_get.Avatar = avatar
+		a_get.Best = best
+		a_get.Average = average
+		err = a_get.AchievementUpdate()
 		return
 	}
 	if best < a_get.Best {
-		err = a_get.AchievementUpdate(userName, avatar, best, a_get.Average)
+		a_get.UserName = userName
+		a_get.Avatar = avatar
+		a_get.Best = best
+		err = a_get.AchievementUpdate()
 		return
 	}
 	if average < a_get.Average {
-		err = a_get.AchievementUpdate(userName, avatar, a_get.Best, average)
+		a_get.UserName = userName
+		a_get.Avatar = avatar
+		a_get.Average = average
+		err = a_get.AchievementUpdate()
 		return
 	}
-	err = a_get.AchievementUpdate(userName, avatar, a_get.Best, a_get.Average)
+	a_get.UserName = userName
+	a_get.Avatar = avatar
+	err = a_get.AchievementUpdate()
 	return
 }
 
 func AchievementGet(userId, item string, session int) (a Achievement, err error) {
 	a = Achievement{}
-	err = Db.QueryRow("select Id, user_id, user_name, avatar, item, best, average, session from [$4].[dbo].[guild_achievement] where user_id = $1 and session = $3 and item = $2", userId, item, session, config.Conf.DatabaseName).Scan(&a.Id, &a.UserId, &a.UserName, &a.Avatar, &a.Item, &a.Best, &a.Average, &a.Session)
+	statment := fmt.Sprintf("select Id, user_id, user_name, avatar, item, best, average, session from [%s].[dbo].[guild_achievement] where user_id = $1 and session = $3 and item = $2", config.Conf.DatabaseName)
+	err = Db.QueryRow(statment, userId, item, session).Scan(&a.Id, &a.UserId, &a.UserName, &a.Avatar, &a.Item, &a.Best, &a.Average, &a.Session)
 	return
 }
 
 // AchievementDeleteByUserIdAndSession
 func ADBUAS(userId string, session int) (err error) {
-	_, err = Db.Exec("delete from [$3].[dbo].[guild_achievement] where user_id = $1 and session = $2", userId, session, config.Conf.DatabaseName)
+	statment := fmt.Sprintf("delete from [%s].[dbo].[guild_achievement] where user_id = $1 and session = $2", config.Conf.DatabaseName)
+	_, err = Db.Exec(statment, userId, session)
 	return
 }
 
 // AchievementDeleteByUserIdAndItemAndSession
 func ADBUAIAS(userId, item string, session int) (err error) {
-	_, err = Db.Exec("delete from [$4].[dbo].[guild_achievement] where user_id = $1 and item = $2 and session = $3", userId, item, session, config.Conf.DatabaseName)
+	statment := fmt.Sprintf("delete from [%s].[dbo].[guild_achievement] where user_id = $1 and item = $2 and session = $3", config.Conf.DatabaseName)
+	_, err = Db.Exec(statment, userId, item, session)
 	return
 }
 
