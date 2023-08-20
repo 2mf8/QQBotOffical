@@ -11,9 +11,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/2mf8/QQBotOffical/api"
 	database "github.com/2mf8/QQBotOffical/data"
+	"github.com/2mf8/QQBotOffical/middleware"
 	_ "github.com/2mf8/QQBotOffical/plugins"
 	"github.com/2mf8/QQBotOffical/public"
+	"github.com/2mf8/QQBotOffical/router"
 	"github.com/2mf8/QQBotOffical/utils"
 	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	"github.com/rifflock/lfshook"
@@ -25,10 +28,27 @@ import (
 	"github.com/tencent-connect/botgo/openapi"
 	"github.com/tencent-connect/botgo/token"
 	"github.com/tencent-connect/botgo/websocket"
+	"gopkg.in/guregu/null.v3"
 )
+
+type Test struct {
+	Value string
+}
+
+var r *Test
 
 func main() {
 	InitLog()
+	go GinRun()
+
+	go database.GetAll()
+
+	a := Test{
+		Value: "ok",
+	}
+	database.RedisSet("test", a)
+	v, _ := database.RedisGet("test", r)
+	fmt.Println("测试", v, r)
 
 	tomlData := `
 	Plugins = ["守卫","开关","复读","WCA","回复","频道管理","赛季","查价","打乱","学习"]   # 插件管理
@@ -117,7 +137,48 @@ func main() {
 		rawMsg = strings.TrimSpace(reg2.ReplaceAllString(rawMsg, "#"))
 		rawMsg = strings.TrimSpace(reg3.ReplaceAllString(rawMsg, "?"))
 
-		// fmt.Println("通过？", plugins.Pass(roles))
+		u, b := public.Prefix(rawMsg, ".创建账号")
+		if b && isBotAdmin {
+			role := 0
+			reg11 := regexp.MustCompile("@!")
+			reg12 := regexp.MustCompile("@")
+			reg13 := regexp.MustCompile(">")
+			reg14 := regexp.MustCompile("  ")
+
+			str1 := strings.TrimSpace(reg11.ReplaceAllString(u, "at qq=\""))
+			str1 = strings.TrimSpace(reg12.ReplaceAllString(str1, "at qq=\""))
+			str2 := strings.TrimSpace(reg13.ReplaceAllString(str1, "\"/>"))
+
+			for public.Contains(str2, "  ") {
+				str2 = strings.TrimSpace(reg14.ReplaceAllString(str2, " "))
+			}
+			t, cs := public.GuildAtConvert(str2)
+			fmt.Println(t, cs)
+			if strings.TrimSpace(t) == "10000" {
+				role = 1 << 30
+			}
+			if strings.TrimSpace(t) == "10001" {
+				role = 1 << 1
+			}
+			if strings.TrimSpace(t) == "10002" {
+				role = 1 << 2
+			}
+			for _, _ui := range cs {
+				_u, err := api.GuildMember(ctx, guildId, _ui)
+				if err != nil {
+					continue
+				}
+				err = database.UserInfoSave(null.NewString(_ui, true), null.NewString(_u.Nick, true), null.NewString(_u.User.Avatar, true), null.NewString(strings.TrimSpace(t), true), null.NewString("", true), null.NewString("", true), null.NewString("", true), null.NewString("", true), role)
+				if err != nil {
+					api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Content: "账号创建失败"})
+					fmt.Println(err)
+					return nil
+				} else {
+					api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Content: "账号创建成功"})
+					return nil
+				}
+			}
+		}
 
 		if len(rolesMap[guildId]) == 0 {
 			var gRoles []string
@@ -606,4 +667,43 @@ func InitLog() {
 			LogFormat:       "[%time%] [%lvl%]: %msg% \r\n",
 		},
 	))
+}
+
+func GinRun() {
+	var c context.Context
+	rr, e := api.GetPricesUrl(c, "10001", "五")
+	fmt.Println(rr.Request.URL, e)
+	bs := middleware.GetKeys()
+	s, _ := middleware.GenTokens("2mf8", 20)
+	rs, err := middleware.ParseToken(s[0], bs[0])
+	fmt.Println(rs, "-", err)
+	rs1, err1 := middleware.ParseToken(s[1], bs[1])
+	fmt.Println(rs1, "-", err1)
+	fmt.Printf(`curl -H "Authorization: Bearer %s" -H "Refresh: Bearer %s" http://localhost:8080/price/四`, s[0], s[1])
+	defer database.Db.Close()
+	r := router.InitRouter()
+	r.Run(":8200")
+}
+
+func t() {
+	//bs := middleware.GetKeys()
+	s, e := middleware.GenTokens("2mf8", 0)
+	fmt.Println(s, "-", e)
+	//rs, err := middleware.ParseToken(s[0], bs[0])
+	//fmt.Println(rs, "-", err)
+	//time.Sleep(time.Second * 2)
+	//rs1, err1 := middleware.ParseToken(s[1], bs[1])
+	//fmt.Println(rs1, "-", err1)
+	for i := 100; i > 0; i-- {
+		time.Sleep(time.Second)
+		_, status, _ := middleware.RefreshTokens(s, 20)
+		fmt.Println(status)
+		if strings.Contains(status, "刷新成功") {
+			t()
+			break
+		}
+		if strings.Contains(status, "已过期") {
+			break
+		}
+	}
 }
