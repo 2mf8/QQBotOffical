@@ -14,12 +14,20 @@ import (
 var jwtKey = []byte("@#$%^&2mf8kequ._AFJK")
 var jwtRefreshKey = []byte("jku838%$_.djkjghjd")
 var setUsername = ""
+var setUserRole = 0
+var setServerNumber = ""
 
 type JwtClaims struct {
-	Username string `json:"username"`
-	Role     int    `json:"role"`
+	UserId       string `json:"user_id"`
+	Username     string `json:"user_name"`
+	UserRole     int    `json:"user_role"` // 1<<1 黄小姐 1<<2 奇乐 1<<30 系统
+	UserAvatar   string `json:"user_avatar"`
+	ServerNumber string `json:"server_number"`
+	Email        string `josn:"email"`
 	jwt.RegisteredClaims
 }
+
+// var LoginMap map[string]int = map[string]int{}
 
 func GetKeys() [2][]uint8 {
 	var bs [2][]uint8
@@ -28,29 +36,21 @@ func GetKeys() [2][]uint8 {
 	return bs
 }
 
-func GenJwtClaims(username string, timeout int) JwtClaims {
+func GenJwtClaims(user_id, user_name, user_avatar, server_number, email string, user_role, timeout int) JwtClaims {
 	expiresAt := jwt.NewNumericDate(time.Now().Add(time.Second * time.Duration(timeout)))
 	claims := JwtClaims{
-		Username: username,
-		Role:     1,
+		UserId:       user_id,
+		Username:     user_name,
+		UserRole:     user_role,
+		UserAvatar:   user_avatar,
+		ServerNumber: server_number,
+		Email:        email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: expiresAt,
 		},
 		//ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * time.Duration(timeout))),
 	}
-	return claims
-}
-
-func ReGenJwtClaims(username string, timeout int) JwtClaims {
-	expiresAt := jwt.NewNumericDate(time.Now().Add(time.Second * time.Duration(timeout)))
-	claims := JwtClaims{
-		Username: username,
-		Role:     1,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: expiresAt,
-		},
-		//ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * time.Duration(timeout))),
-	}
+	// LoginMap[user_id] = claims.UserRole
 	return claims
 }
 
@@ -59,14 +59,14 @@ func (j *JwtClaims) GenToken(key []byte) (string, error) {
 	return token.SignedString(key)
 }
 
-func GenTokens(username string, timeout int) ([2]string, [2]error) {
+func GenTokens(user_id, user_name, user_avatar, server_number, email string, user_role, timeout int) ([2]string, [2]error) {
 	var tokens [2]string
 	var errs [2]error
-	tg := GenJwtClaims(username, timeout)
+	tg := GenJwtClaims(user_id, user_name, user_avatar, server_number, email, user_role, timeout)
 	t, e1 := tg.GenToken(jwtKey)
 	tokens[0] = t
 	errs[0] = e1
-	rtg := GenJwtClaims(username, timeout*3)
+	rtg := GenJwtClaims(user_id, user_name, user_avatar, server_number, email, user_role, timeout)
 	rt, e2 := rtg.GenToken(jwtRefreshKey)
 	tokens[1] = rt
 	errs[1] = e2
@@ -90,12 +90,14 @@ func RefreshTokens(refreshTokens [2]string, timeout int) ([2]string, string, [2]
 			status := "token已过期，请正常登录"
 			return tokens, status, errs
 		}
-		tg := ReGenJwtClaims(rj.Username, timeout)
+		tg := GenJwtClaims(rj.UserId, rj.Username, rj.UserAvatar, rj.ServerNumber, rj.Email, rj.UserRole, timeout)
 		t, e1 := tg.GenToken(bs[0])
 		tokens[0] = t
 		errs[0] = e1
 		setUsername = rj.Username
-		rtg := ReGenJwtClaims(rj.Username, timeout*3)
+		setUserRole = rj.UserRole
+		setServerNumber = rj.ServerNumber
+		rtg := GenJwtClaims(rj.UserId, rj.Username, rj.UserAvatar, rj.ServerNumber, rj.Email, rj.UserRole, timeout)
 		rt, e2 := rtg.GenToken(bs[1])
 		tokens[1] = rt
 		errs[1] = e2
@@ -104,6 +106,8 @@ func RefreshTokens(refreshTokens [2]string, timeout int) ([2]string, string, [2]
 		return tokens, status, errs
 	}
 	setUsername = _r.Username
+	setUserRole = _r.UserRole
+	setServerNumber = _r.ServerNumber
 	status := "登录状态正常"
 	tokens = refreshTokens
 	return tokens, status, errs
@@ -162,7 +166,9 @@ func JWTAuthMiddlewareOrRefreshToken() func(c *gin.Context) {
 				c.Abort()
 				return
 			}
-			c.Set("Username", setUsername)
+			c.Set("user_name", setUsername)
+			c.Set("user_role", setUserRole)
+			c.Set("server_number", setServerNumber)
 			c.Next()
 		} else {
 			c.JSON(int(status.MethodNotAllowed), gin.H{

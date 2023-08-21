@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"html"
 	"io"
+	"math/rand"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type PluginConfig struct {
@@ -218,4 +220,14 @@ func ConvertGradeToInt(s string) (grade []int) {
 		}
 	}
 	return grade
+}
+
+func RandomString(n int) string {
+	var letters = []byte("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
+	result := make([]byte, n)
+	rand.NewSource(time.Now().Unix())
+	for i := range result {
+		result[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(result)
 }

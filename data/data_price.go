@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/2mf8/QQBotOffical/config"
 	_ "github.com/denisenkom/go-mssqldb"
@@ -134,7 +135,7 @@ func IDBGAN(guildId, channelId, item string) (err error) {
 
 func GetAll() (err error) {
 	ii := 0
-	statment := fmt.Sprintf("select guild_id, channel_id, brand, item, price, shipping, updater, gmt_modified, is_magnetism from [%s].[dbo].[guild_price2]", config.Conf.DatabaseName)
+	statment := fmt.Sprintf("select guild_id, channel_id, brand, item, price, shipping, updater, gmt_modified, is_magnetism from [%s].[dbo].[guild_price]", config.Conf.DatabaseName)
 	rows, err := Db.Query(statment)
 	fmt.Println(err)
 	if err != nil {
@@ -143,9 +144,12 @@ func GetAll() (err error) {
 	defer rows.Close()
 	for rows.Next() {
 		fmt.Println(ii)
-		cp := TempCuberPrice{}
+		cp := CuberPrice{}
 		err = rows.Scan(&cp.GuildId, &cp.ChannelId, &cp.Brand, &cp.Item, &cp.Price, &cp.Shipping, &cp.Updater, &cp.GmtModified, &cp.IsMagnetism)
-		ItemSave(cp.GuildId.String, cp.ChannelId.String, cp.Brand, cp.Item, cp.Price, cp.Shipping, cp.Updater, cp.GmtModified, cp.IsMagnetism)
+		if strings.Contains(cp.Item, "磁") {
+			cp.IsMagnetism = true
+			ItemSave(cp.GuildId, cp.ChannelId, cp.Brand, cp.Item, cp.Price, cp.Shipping, cp.Updater, cp.GmtModified, cp.IsMagnetism)
+		}
 		ii++
 	}
 	return

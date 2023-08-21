@@ -25,8 +25,20 @@ type UserInfo struct {
 }
 
 func UserInfoGet(userid, email, qq_union_id, weixin_union_id string) (ui UserInfo, err error) {
-	statment := fmt.Sprintf("select Id, user_id, user_name, user_role, user_avatar, server_number, password, email, qq_union_id, weixin_union_id from [%s].[dbo].[user_info] where user_id = $1 or email = $2 or qq_union_id = $3 or WeixinUnionId = $4", config.Conf.DatabaseName)
+	statment := fmt.Sprintf("select Id, user_id, user_name, user_role, user_avatar, server_number, password, email, qq_union_id, weixin_union_id from [%s].[dbo].[user_info] where user_id = $1 or email = $2 or qq_union_id = $3 or weixin_union_id = $4", config.Conf.DatabaseName)
 	err = Db.QueryRow(statment, userid, email, qq_union_id, weixin_union_id).Scan(&ui.Id, &ui.UserId, &ui.Username, &ui.UserRole, &ui.UserAvatar, &ui.ServerNumber, &ui.Password, &ui.Email, &ui.QQUnionId, &ui.WeixinUnionId)
+	info := fmt.Sprintf("%s", err)
+	if public.StartsWith(info, "sql") || public.StartsWith(info, "unable") {
+		if public.StartsWith(info, "unable") {
+			log.Warn(info)
+		}
+	}
+	return
+}
+
+func UserInfoGetByBot(userid string) (ui UserInfo, err error) {
+	statment := fmt.Sprintf("select Id, user_id, user_name, user_role, user_avatar, server_number, password, email, qq_union_id, weixin_union_id from [%s].[dbo].[user_info] where user_id = $1", config.Conf.DatabaseName)
+	err = Db.QueryRow(statment, userid).Scan(&ui.Id, &ui.UserId, &ui.Username, &ui.UserRole, &ui.UserAvatar, &ui.ServerNumber, &ui.Password, &ui.Email, &ui.QQUnionId, &ui.WeixinUnionId)
 	info := fmt.Sprintf("%s", err)
 	if public.StartsWith(info, "sql") || public.StartsWith(info, "unable") {
 		if public.StartsWith(info, "unable") {
@@ -41,6 +53,7 @@ func (ui *UserInfo) UserInfoUpdate() error {
 	_, err := Db.Exec(statment, ui.Id, ui.UserId.String, ui.Username.String, ui.UserRole, ui.UserAvatar.String, ui.ServerNumber.String, ui.Password.String, ui.Email.String, ui.QQUnionId.String, ui.WeixinUnionId.String)
 	return err
 }
+
 // user_info
 func (ui *UserInfo) UserInfoCreate() error {
 	statment := fmt.Sprintf("insert into [%s].[dbo].[user_info] values ($1 ,$2 ,$3 ,$4 ,$5 ,$6 ,$7 ,$8 ,$9) select @@identity", config.Conf.DatabaseName)
@@ -65,7 +78,7 @@ func UserInfoSave(user_id, user_name, user_avatar, server_number, password, emai
 		QQUnionId:     qq_union_id,
 		WeixinUnionId: weixin_union_id,
 	}
-	ui_get, err := UserInfoGet(user_id.String, email.String, qq_union_id.String, weixin_union_id.String)
+	ui_get, err := UserInfoGetByBot(user_id.String)
 	if err != nil {
 		err = ui.UserInfoCreate()
 		return

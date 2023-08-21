@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
@@ -11,9 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/2mf8/QQBotOffical/api"
+	_api "github.com/2mf8/QQBotOffical/api"
 	database "github.com/2mf8/QQBotOffical/data"
-	"github.com/2mf8/QQBotOffical/middleware"
 	_ "github.com/2mf8/QQBotOffical/plugins"
 	"github.com/2mf8/QQBotOffical/public"
 	"github.com/2mf8/QQBotOffical/router"
@@ -31,24 +31,12 @@ import (
 	"gopkg.in/guregu/null.v3"
 )
 
-type Test struct {
-	Value string
-}
-
-var r *Test
-
 func main() {
 	InitLog()
 	go GinRun()
 
-	go database.GetAll()
-
-	a := Test{
-		Value: "ok",
-	}
-	database.RedisSet("test", a)
-	v, _ := database.RedisGet("test", r)
-	fmt.Println("测试", v, r)
+	fmt.Println(public.RandomString(6))
+	//go database.GetAll()
 
 	tomlData := `
 	Plugins = ["守卫","开关","复读","WCA","回复","频道管理","赛季","查价","打乱","学习"]   # 插件管理
@@ -102,6 +90,12 @@ func main() {
 	// roles":[{"id":"4","name":"频道主","color":4294917938,"hoist":1,"number":1,"member_limit":1},{"id":"2","name":"超级管理员","color":4294936110,"hoist":1,"number":17,"member_limit":50},{"id":"7","name":"分组管理员","color":4283608319,"hoist":1,"number":0,"member_limit":50},{"id":"5","name":"子频道管理员","color":4288922822,"hoist":1,"number":16,"member_limit":50},{"id":"10012668","name":"直播组","color":4283249526,"hoist":0,"number":0,"member_limit":3000},{"id":"10012638","name":"魔方官方","color":4293221280,"hoist":1,"number":7,"member_limit":3000},{"id":"10012648","name":"知名选手","color":4294920704,"hoist":1,"number":6,"member_limit":3000},{"id":"10012655","name":"资深魔友","color":4290852578,"hoist":1,"number":40,"member_limit":3000},{"id":"10012214","name":"一个头衔","color":4288044306,"hoist":0,"number":18,"member_limit":3000},{"id":"10015793","name":"魔方店家","color":4279419354,"hoist":1,"number":2,"member_limit":3000},{"id":"13719410","name":"开发者","color":4285672924,"hoist":1,"number":2,"member_limit":3000},{"id":"13818102","name":"赛季巡查员","color":4292095291,"hoist":1,"number":2,"member_limit":3000},{"id":"13818124","name":"广告巡查员","color":4289887999,"hoist":1,"number":7,"member_limit":3000},{"id":"14102869","name":"热心魔友","color":4279419354,"hoist":1,"number":4,"member_limit":3000},{"id":"6","name":"访客","color":4286151052,"hoist":0,"number":0,"member_limit":3000},{"id":"1","name":"普通成员","color":4286151052,"hoist":0,"number":0,"member_limit":1000}],"role_num_limit":"32"}
 
 	var message event.MessageEventHandler = func(event *dto.WSPayload, data *dto.WSMessageData) error {
+
+		/*gss, _ := api.MeGuilds(ctx, &dto.GuildPager{})
+		for _, v := range gss {
+			fmt.Println(v.OwnerID, v.Name)
+		}*/
+
 		me, _ := api.Me(ctx)
 		atBot := fmt.Sprintf("<@!%s>", me.ID)
 		imgStr := ""
@@ -138,7 +132,7 @@ func main() {
 		rawMsg = strings.TrimSpace(reg3.ReplaceAllString(rawMsg, "?"))
 
 		u, b := public.Prefix(rawMsg, ".创建账号")
-		if b && isBotAdmin {
+		if b {
 			role := 0
 			reg11 := regexp.MustCompile("@!")
 			reg12 := regexp.MustCompile("@")
@@ -153,31 +147,104 @@ func main() {
 				str2 = strings.TrimSpace(reg14.ReplaceAllString(str2, " "))
 			}
 			t, cs := public.GuildAtConvert(str2)
-			fmt.Println(t, cs)
-			if strings.TrimSpace(t) == "10000" {
-				role = 1 << 30
-			}
-			if strings.TrimSpace(t) == "10001" {
-				role = 1 << 1
-			}
-			if strings.TrimSpace(t) == "10002" {
-				role = 1 << 2
-			}
-			for _, _ui := range cs {
-				_u, err := api.GuildMember(ctx, guildId, _ui)
-				if err != nil {
-					continue
+			if isBotAdmin {
+				fmt.Println(t, cs)
+				if strings.TrimSpace(t) == "10000" {
+					role = 1 << 30
 				}
-				err = database.UserInfoSave(null.NewString(_ui, true), null.NewString(_u.Nick, true), null.NewString(_u.User.Avatar, true), null.NewString(strings.TrimSpace(t), true), null.NewString("", true), null.NewString("", true), null.NewString("", true), null.NewString("", true), role)
-				if err != nil {
-					api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Content: "账号创建失败"})
-					fmt.Println(err)
-					return nil
-				} else {
-					api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Content: "账号创建成功"})
-					return nil
+				if strings.TrimSpace(t) == "10001" {
+					role = 1 << 1
+				}
+				if strings.TrimSpace(t) == "10002" {
+					role = 1 << 2
+				}
+				for _, _ui := range cs {
+					_u, err := api.GuildMember(ctx, guildId, _ui)
+					if err != nil {
+						continue
+					}
+					err = database.UserInfoSave(null.NewString(_ui, true), null.NewString(_u.Nick, true), null.NewString(_u.User.Avatar, true), null.NewString(strings.TrimSpace(t), true), null.NewString("", true), null.NewString("", true), null.NewString("", true), null.NewString("", true), role)
+					if err != nil {
+						api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Content: "账号创建失败"})
+						fmt.Println(err)
+						return nil
+					} else {
+						api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Content: "账号创建成功"})
+						return nil
+					}
 				}
 			}
+			if userId == "1161014622077006888" {
+				role = 1 << 1 // 黄小姐
+				for _, _ui := range cs {
+					_u, err := api.GuildMember(ctx, guildId, _ui)
+					if err != nil {
+						continue
+					}
+					err = database.UserInfoSave(null.NewString(_ui, true), null.NewString(_u.Nick, true), null.NewString(_u.User.Avatar, true), null.NewString("10001", true), null.NewString("", true), null.NewString("", true), null.NewString("", true), null.NewString("", true), role)
+					if err != nil {
+						api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Content: "账号创建失败"})
+						fmt.Println(err)
+						return nil
+					} else {
+						api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Content: "账号创建成功"})
+						return nil
+					}
+				}
+			}
+			if userId == "18155629338841245002" {
+				role = 1 << 2 //奇乐
+				for _, _ui := range cs {
+					_u, err := api.GuildMember(ctx, guildId, _ui)
+					if err != nil {
+						continue
+					}
+					err = database.UserInfoSave(null.NewString(_ui, true), null.NewString(_u.Nick, true), null.NewString(_u.User.Avatar, true), null.NewString("10002", true), null.NewString("", true), null.NewString("", true), null.NewString("", true), null.NewString("", true), role)
+					if err != nil {
+						api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Content: "账号创建失败"})
+						fmt.Println(err)
+						return nil
+					} else {
+						api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Content: "账号创建成功"})
+						return nil
+					}
+				}
+			}
+
+			err = database.UserInfoSave(null.NewString(userId, true), null.NewString(username, true), null.NewString(avatar, true), null.NewString("", true), null.NewString("", true), null.NewString("", true), null.NewString("", true), null.NewString("", true), role)
+			if err != nil {
+				api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Content: "账号创建失败"})
+				fmt.Println(err)
+				return nil
+			} else {
+				api.PostMessage(ctx, channelId, &dto.MessageToCreate{MsgID: msgId, Content: "账号创建成功"})
+				return nil
+			}
+		}
+
+		if rawMsg == ".登录" {
+			randomString := public.RandomString(6)
+			l := _api.Login{
+				Account: userId,
+				Code:    randomString,
+			}
+			bl, err := json.Marshal(l)
+			if err != nil {
+				fmt.Println(err)
+			}
+			database.RedisSet(userId, bl)
+			//go GetT(userId)
+			fmt.Printf("curl -X POST -H \"Content-Type:application/json\" -d \"{\\\"account\\\":\\\"%s\\\", \\\"code\\\": \\\"%s\\\"}\" http://localhost:8200/login\n", userId, randomString)
+			dmsg, err := api.CreateDirectMessage(ctx, &dto.DirectMessageToCreate{
+				SourceGuildID: guildId,
+				RecipientID:   data.Author.ID,
+			})
+			if err != nil {
+				log.Warnf("私信出错了，err = ", err)
+				return nil
+			}
+			api.PostDirectMessage(ctx, dmsg, &dto.MessageToCreate{Content: fmt.Sprintf("登录信息\n账号：%s\n验证码：%s\n注：该验证码五分钟内有效。", userId, randomString), MsgID: data.ID})
+			api.PostMessage(ctx, channelId, &dto.MessageToCreate{Content: "登录信息已私发，请查看私信。", MsgID: msgId})
 		}
 
 		if len(rolesMap[guildId]) == 0 {
@@ -670,40 +737,15 @@ func InitLog() {
 }
 
 func GinRun() {
-	var c context.Context
-	rr, e := api.GetPricesUrl(c, "10001", "五")
-	fmt.Println(rr.Request.URL, e)
-	bs := middleware.GetKeys()
-	s, _ := middleware.GenTokens("2mf8", 20)
-	rs, err := middleware.ParseToken(s[0], bs[0])
-	fmt.Println(rs, "-", err)
-	rs1, err1 := middleware.ParseToken(s[1], bs[1])
-	fmt.Println(rs1, "-", err1)
-	fmt.Printf(`curl -H "Authorization: Bearer %s" -H "Refresh: Bearer %s" http://localhost:8080/price/四`, s[0], s[1])
 	defer database.Db.Close()
 	r := router.InitRouter()
 	r.Run(":8200")
 }
 
-func t() {
-	//bs := middleware.GetKeys()
-	s, e := middleware.GenTokens("2mf8", 0)
-	fmt.Println(s, "-", e)
-	//rs, err := middleware.ParseToken(s[0], bs[0])
-	//fmt.Println(rs, "-", err)
-	//time.Sleep(time.Second * 2)
-	//rs1, err1 := middleware.ParseToken(s[1], bs[1])
-	//fmt.Println(rs1, "-", err1)
-	for i := 100; i > 0; i-- {
+func GetT(userId string) {
+	for i := 10; i > 0; i-- {
+		v, err := database.RedisGet(userId)
+		fmt.Println(i, v, err)
 		time.Sleep(time.Second)
-		_, status, _ := middleware.RefreshTokens(s, 20)
-		fmt.Println(status)
-		if strings.Contains(status, "刷新成功") {
-			t()
-			break
-		}
-		if strings.Contains(status, "已过期") {
-			break
-		}
 	}
 }

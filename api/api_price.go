@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/2mf8/QQBotOffical/status"
 	database "github.com/2mf8/QQBotOffical/data"
+	"github.com/2mf8/QQBotOffical/status"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,6 +17,15 @@ func IndexApi(c *gin.Context) {
 func PriceAddAndUpdateByItemApi(c *gin.Context) {
 	citem := c.Param("item")
 	sn := c.Param("service_number")
+	sng, _ := c.Get("server_number")
+	if !(sn == sng || sng == "10000") {
+		c.JSON(int(status.ExpectationFailed), gin.H{
+			"code": status.Forbidden,
+			"msg":  "禁止访问，您权限不足。",
+		})
+		c.Abort()
+		return
+	}
 	cp, err := database.GetItem(sn, sn, citem)
 	if err != nil {
 		len := c.Request.ContentLength
@@ -29,6 +38,8 @@ func PriceAddAndUpdateByItemApi(c *gin.Context) {
 				"code": status.GetError,
 				"msg":  "item不能为空",
 			})
+			c.Abort()
+			return
 		} else {
 			cu, err := database.GetItem(sn, sn, cp.Item)
 			gid := cu.Id
@@ -40,12 +51,16 @@ func PriceAddAndUpdateByItemApi(c *gin.Context) {
 						"code": status.CreateError,
 						"msg":  msg,
 					})
+					c.Abort()
+					return
 				} else {
 					msg := fmt.Sprintf("创建%s成功", cp.Item)
 					c.JSON(int(status.OK), gin.H{
 						"code": status.OK,
 						"msg":  msg,
 					})
+					c.Abort()
+					return
 				}
 			} else {
 				if cid == gid {
@@ -61,12 +76,16 @@ func PriceAddAndUpdateByItemApi(c *gin.Context) {
 						"code": status.UpdateError,
 						"msg":  msg,
 					})
+					c.Abort()
+					return
 				} else {
 					msg := fmt.Sprintf("更新%s成功", cp.Item)
 					c.JSON(int(status.OK), gin.H{
 						"code": status.OK,
 						"msg":  msg,
 					})
+					c.Abort()
+					return
 				}
 			}
 		}
@@ -82,12 +101,16 @@ func PriceAddAndUpdateByItemApi(c *gin.Context) {
 				"code": status.UpdateError,
 				"msg":  msg,
 			})
+			c.Abort()
+			return
 		} else {
 			msg := fmt.Sprintf("更新%s成功", cp.Item)
 			c.JSON(int(status.OK), gin.H{
 				"code": status.OK,
 				"msg":  msg,
 			})
+			c.Abort()
+			return
 		}
 	}
 }
@@ -95,6 +118,15 @@ func PriceAddAndUpdateByItemApi(c *gin.Context) {
 func PriceDeleteByItemApi(c *gin.Context) {
 	citem := c.Param("item")
 	sn := c.Param("service_number")
+	sng, _ := c.Get("server_number")
+	if !(sn == sng || sng == "10000") {
+		c.JSON(int(status.ExpectationFailed), gin.H{
+			"code": status.Forbidden,
+			"msg":  "禁止访问，您权限不足。",
+		})
+		c.Abort()
+		return
+	}
 	cp, err := database.GetItem(sn, sn, citem)
 	if err != nil {
 		fmt.Println(err)
@@ -103,6 +135,8 @@ func PriceDeleteByItemApi(c *gin.Context) {
 			"code": status.GetError,
 			"msg":  msg,
 		})
+		c.Abort()
+		return
 	} else {
 		err = cp.ItemDeleteById()
 		if err != nil {
@@ -111,12 +145,16 @@ func PriceDeleteByItemApi(c *gin.Context) {
 				"code": status.DeleteError,
 				"msg":  msg,
 			})
+			c.Abort()
+			return
 		} else {
 			msg := fmt.Sprintf("删除%s成功", cp.Item)
 			c.JSON(int(status.OK), gin.H{
 				"code": status.OK,
 				"msg":  msg,
 			})
+			c.Abort()
+			return
 		}
 	}
 }
@@ -132,6 +170,8 @@ func PriceGetItemApi(c *gin.Context) {
 			"code": status.GetError,
 			"msg":  msg,
 		})
+		c.Abort()
+		return
 	} else {
 		/*op, err := json.MarshalIndent(&cp, "", "\t")
 		if err != nil {
@@ -145,6 +185,8 @@ func PriceGetItemApi(c *gin.Context) {
 			"msg":  fmt.Sprintf("获取%s成功", citem),
 			"data": cp,
 		})
+		c.Abort()
+		return
 	}
 }
 
@@ -172,6 +214,8 @@ func PriceGetItemsApi(c *gin.Context) {
 			"shop":    shop,
 			"QQGuild": QQGuild,
 		})
+		c.Abort()
+		return
 	} else if len(cp) == 0 {
 		c.JSON(int(status.ExpectationFailed), gin.H{
 			"code":    status.ExpectationFailed,
@@ -179,6 +223,8 @@ func PriceGetItemsApi(c *gin.Context) {
 			"shop":    shop,
 			"QQGuild": QQGuild,
 		})
+		c.Abort()
+		return
 	} else {
 		/*op, err := json.MarshalIndent(&cp, "", "\t")
 		if err != nil {
@@ -194,6 +240,8 @@ func PriceGetItemsApi(c *gin.Context) {
 			"QQGuild": QQGuild,
 			"data":    cp,
 		})
+		c.Abort()
+		return
 	}
 }
 
@@ -221,6 +269,8 @@ func PriceGetItemsAllApi(c *gin.Context) {
 			"shop":    shop,
 			"QQGuild": QQGuild,
 		})
+		c.Abort()
+		return
 	} else if len(cp) == 0 {
 		c.JSON(int(status.ExpectationFailed), gin.H{
 			"code":    status.ExpectationFailed,
@@ -228,6 +278,8 @@ func PriceGetItemsAllApi(c *gin.Context) {
 			"shop":    shop,
 			"QQGuild": QQGuild,
 		})
+		c.Abort()
+		return
 	} else {
 		/*op, err := json.MarshalIndent(&cp, "", "\t")
 		if err != nil {
@@ -243,5 +295,7 @@ func PriceGetItemsAllApi(c *gin.Context) {
 			"QQGuild": QQGuild,
 			"data":    cp,
 		})
+		c.Abort()
+		return
 	}
 }
