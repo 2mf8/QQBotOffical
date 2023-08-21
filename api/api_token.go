@@ -55,7 +55,7 @@ func TokenGetApi(c *gin.Context) {
 	}
 	json.Unmarshal(bv, &li)
 	if l.Account == li.Account && l.Code == li.Code {
-		ts, es := middleware.GenTokens(u.UserId.String, u.Username.String, u.UserAvatar.String, u.ServerNumber.String, u.Email.String, u.UserRole, 20)
+		ts, es := middleware.GenTokens(u.UserId.String, u.Username.String, u.UserAvatar.String, u.ServerNumber.String, u.Email.String, u.UserRole, 2)
 		if es[0] != nil {
 			c.JSON(int(status.ExpectationFailed), gin.H{
 				"code": status.GetTokenError,

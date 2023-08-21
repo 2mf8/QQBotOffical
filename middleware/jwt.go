@@ -37,7 +37,7 @@ func GetKeys() [2][]uint8 {
 }
 
 func GenJwtClaims(user_id, user_name, user_avatar, server_number, email string, user_role, timeout int) JwtClaims {
-	expiresAt := jwt.NewNumericDate(time.Now().Add(time.Second * time.Duration(timeout)))
+	expiresAt := jwt.NewNumericDate(time.Now().Add(time.Hour * time.Duration(timeout)))
 	claims := JwtClaims{
 		UserId:       user_id,
 		Username:     user_name,
@@ -66,7 +66,7 @@ func GenTokens(user_id, user_name, user_avatar, server_number, email string, use
 	t, e1 := tg.GenToken(jwtKey)
 	tokens[0] = t
 	errs[0] = e1
-	rtg := GenJwtClaims(user_id, user_name, user_avatar, server_number, email, user_role, timeout)
+	rtg := GenJwtClaims(user_id, user_name, user_avatar, server_number, email, user_role, timeout*6)
 	rt, e2 := rtg.GenToken(jwtRefreshKey)
 	tokens[1] = rt
 	errs[1] = e2
@@ -97,7 +97,7 @@ func RefreshTokens(refreshTokens [2]string, timeout int) ([2]string, string, [2]
 		setUsername = rj.Username
 		setUserRole = rj.UserRole
 		setServerNumber = rj.ServerNumber
-		rtg := GenJwtClaims(rj.UserId, rj.Username, rj.UserAvatar, rj.ServerNumber, rj.Email, rj.UserRole, timeout)
+		rtg := GenJwtClaims(rj.UserId, rj.Username, rj.UserAvatar, rj.ServerNumber, rj.Email, rj.UserRole, timeout*6)
 		rt, e2 := rtg.GenToken(bs[1])
 		tokens[1] = rt
 		errs[1] = e2
@@ -157,7 +157,7 @@ func JWTAuthMiddlewareOrRefreshToken() func(c *gin.Context) {
 					tokens[1] = rparts[1]
 				}
 			}
-			_, _status, _ := RefreshTokens(tokens, 20)
+			_, _status, _ := RefreshTokens(tokens, 2)
 			if !strings.Contains(_status, "状态正常") {
 				c.JSON(int(status.ExpectationFailed), gin.H{
 					"code": 200,
