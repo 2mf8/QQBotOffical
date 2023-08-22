@@ -242,7 +242,7 @@ func main() {
 				RecipientID:   data.Author.ID,
 			})
 			if err != nil {
-				log.Warnf("私信出错了，err = ", err)
+				log.Warnf("私信出错了，err = %v", err)
 				return nil
 			}
 			api.PostDirectMessage(ctx, dmsg, &dto.MessageToCreate{Content: fmt.Sprintf("登录信息\n账号：%s\n验证码：%s\n注：该验证码五分钟内有效。", userId, randomString), MsgID: data.ID})
@@ -285,7 +285,7 @@ func main() {
 				RecipientID:   data.Author.ID,
 			})
 			if err != nil {
-				log.Warnf("私信出错了，err = ", err)
+				log.Warnf("私信出错了，err = %v", err)
 				return nil
 			}
 			api.PostDirectMessage(ctx, dmsg, &dto.MessageToCreate{Content: "hello", MsgID: data.ID})
@@ -651,8 +651,8 @@ func main() {
 					api.PostMessage(ctx, channelId, newMsg)
 					break
 				}
-				if retStuct.ReqType == utils.GuildLeave {
-				}
+				/*if retStuct.ReqType == utils.GuildLeave {
+				}*/
 				if retStuct.ReqType == utils.DeleteMsg {
 					api.MemberMute(ctx, guildId, userId, &dto.UpdateGuildMute{MuteSeconds: retStuct.Duration})
 					newMsg := &dto.MessageToCreate{

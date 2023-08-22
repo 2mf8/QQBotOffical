@@ -14,34 +14,45 @@ type Scramble struct {
 func Tnoodle(scramble string) (s Scramble) {
 	switch scramble {
 	case "2":
-		return Scramble{"2", "222", "2阶"}
+	case "222":
+		s = Scramble{"2", "222", "2阶"}
+	case "333":
 	case "3":
-		return Scramble{"3", "333", "3阶"}
+		s = Scramble{"3", "333", "3阶"}
+	case "444":
 	case "4":
-		return Scramble{"4", "444", "4阶"}
+		s = Scramble{"4", "444", "4阶"}
+	case "555":
 	case "5":
-		return Scramble{"5", "555", "5阶"}
+		s = Scramble{"5", "555", "5阶"}
+	case "666":
 	case "6":
-		return Scramble{"6", "666", "6阶"}
+		s = Scramble{"6", "666", "6阶"}
+	case "777":
 	case "7":
-		return Scramble{"7", "777", "7阶"}
+		s = Scramble{"7", "777", "7阶"}
 	case "py":
-		return Scramble{"py", "pyram", "pyram"}
+	case "pyram":
+		s = Scramble{"py", "pyram", "pyram"}
+	case "skewb":
 	case "sk":
-		return Scramble{"sk", "skewb", "skewb"}
+		s = Scramble{"sk", "skewb", "skewb"}
+	case "sq1":
 	case "sq":
-		return Scramble{"sq", "sq1", "sq1"}
+		s = Scramble{"sq", "sq1", "sq1"}
+	case "clock":
 	case "cl":
-		return Scramble{"cl", "clock", "clock"}
-	case "mx":
-		return Scramble{"mx", "minx", "minx"}
-	case "fm":
-		return Scramble{"fm", "333fm", "333fm"}
+		s = Scramble{"cl", "clock", "clock"}
 	case "minx":
-		return Scramble{"minx", "minx", "minx"}
+	case "mx":
+		s = Scramble{"mx", "minx", "minx"}
+	case "333fm":
+	case "fm":
+		s = Scramble{"fm", "333fm", "333fm"}
 	default:
-		return Scramble{"instruction", "shortName", "showName"}
+		s = Scramble{"instruction", "shortName", "showName"}
 	}
+	return
 }
 
 func GetScramble(s string) string {

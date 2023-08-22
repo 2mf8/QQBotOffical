@@ -34,6 +34,18 @@ type CompOptions struct {
 }
 
 var ScrambleMap = map[string]string{
+	"2":     "222",
+	"3":     "333",
+	"4":     "444",
+	"5":     "555",
+	"6":     "666",
+	"7":     "777",
+	"sk":    "skewb",
+	"py":    "pyram",
+	"sq":    "sq1",
+	"cl":    "clock",
+	"mx":    "minx",
+	"fm":    "333fm",
 	"222":   "222",
 	"333":   "333",
 	"444":   "444",
