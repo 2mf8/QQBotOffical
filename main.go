@@ -55,6 +55,8 @@ func main() {
 	RedisPassword = "" # Redis密码
 	RedisTable = 0 # Redis数据表
 	RedisPoolSize = 1000 # Redis连接池数量
+	JwtKey = ""
+	RefreshKey = ""
 	`
 
 	log.Infoln("欢迎您使用QQBotOffical")

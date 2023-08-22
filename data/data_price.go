@@ -39,7 +39,7 @@ type TempCuberPrice struct {
 // is_magnetism
 func GetItem(guildId, channelId string, item string) (cp CuberPrice, err error) {
 	cp = CuberPrice{}
-	statment := fmt.Sprintf("select ID, guild_id, channel_id, brand, item, price, shipping, updater, gmt_modified, is_magnetism from [%s].[dbo].[guild_price] where guild_id = $1 and channel_id = $3 and item = $2", config.Conf.DatabaseName)
+	statment := fmt.Sprintf("select ID, guild_id, channel_id, brand, item, price, shipping, updater, gmt_modified, is_magnetism from [%s].[dbo].[guild_price] where guild_id = $1 and channel_id = $3 and (item = $2 or ID = $2)", config.Conf.DatabaseName)
 	err = Db.QueryRow(statment, guildId, item, channelId).Scan(&cp.Id, &cp.GuildId, &cp.ChannelId, &cp.Brand, &cp.Item, &cp.Price, &cp.Shipping, &cp.Updater, &cp.GmtModified, &cp.IsMagnetism)
 	return
 }

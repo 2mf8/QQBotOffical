@@ -26,88 +26,102 @@ func PriceAddAndUpdateByItemApi(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	cp, err := database.GetItem(sn, sn, citem)
-	if err != nil {
-		len := c.Request.ContentLength
-		body := make([]byte, len)
-		c.Request.Body.Read(body)
-		json.Unmarshal(body, &cp)
-		cid := cp.Id
-		if cp.Item == "" {
-			c.JSON(int(status.NoContent), gin.H{
-				"code": status.GetError,
+	ccp := database.CuberPrice{}
+	len := c.Request.ContentLength
+	body := make([]byte, len)
+	c.Request.Body.Read(body)
+	json.Unmarshal(body, &ccp)
+	if ccp.GuildId == "" {
+		ccp.GuildId = sn
+	}
+	if ccp.ChannelId == "" {
+		ccp.ChannelId = sn
+	}
+	if citem == "" {
+		if ccp.Item == "" {
+			c.JSON(int(status.BadRequest), gin.H{
+				"code": status.BadRequest,
 				"msg":  "item不能为空",
 			})
 			c.Abort()
 			return
 		} else {
-			cu, err := database.GetItem(sn, sn, cp.Item)
-			gid := cu.Id
+			err := ccp.ItemCreate()
 			if err != nil {
-				err = cp.ItemCreate()
-				if err != nil {
-					msg := fmt.Sprintf("创建%s失败", cp.Item)
-					c.JSON(int(status.InternalServerError), gin.H{
-						"code": status.CreateError,
-						"msg":  msg,
-					})
-					c.Abort()
-					return
-				} else {
-					msg := fmt.Sprintf("创建%s成功", cp.Item)
-					c.JSON(int(status.OK), gin.H{
-						"code": status.OK,
-						"msg":  msg,
-					})
-					c.Abort()
-					return
-				}
+				msg := fmt.Sprintf("创建%s失败", ccp.Item)
+				c.JSON(int(status.InternalServerError), gin.H{
+					"code": status.CreateError,
+					"msg":  msg,
+				})
+				c.Abort()
+				return
 			} else {
-				if cid == gid {
-					err = cp.ItemUpdate()
-				} else {
-					err1 := cu.ItemDeleteById()
-					fmt.Println(err1)
-					err = cp.ItemUpdate()
-				}
-				if err != nil {
-					msg := fmt.Sprintf("更新%s失败", cp.Item)
-					c.JSON(int(status.InternalServerError), gin.H{
-						"code": status.UpdateError,
-						"msg":  msg,
-					})
-					c.Abort()
-					return
-				} else {
-					msg := fmt.Sprintf("更新%s成功", cp.Item)
-					c.JSON(int(status.OK), gin.H{
-						"code": status.OK,
-						"msg":  msg,
-					})
-					c.Abort()
-					return
-				}
+				msg := fmt.Sprintf("创建%s成功", ccp.Item)
+				c.JSON(int(status.OK), gin.H{
+					"code": status.OK,
+					"msg":  msg,
+				})
+				c.Abort()
+				return
 			}
 		}
-	} else {
-		len := c.Request.ContentLength
-		body := make([]byte, len)
-		c.Request.Body.Read(body)
-		json.Unmarshal(body, &cp)
-		err = cp.ItemUpdate()
-		if err != nil {
-			msg := fmt.Sprintf("更新%s失败", cp.Item)
-			c.JSON(int(status.InternalServerError), gin.H{
-				"code": status.UpdateError,
-				"msg":  msg,
+	}
+	cp, err := database.GetItem(sn, sn, citem)
+	if err != nil {
+		if ccp.Item == "" {
+			ccp.Item = citem
+		}
+		if ccp.Item == citem {
+			err := ccp.ItemCreate()
+			if err != nil {
+				msg := fmt.Sprintf("创建%s失败", ccp.Item)
+				c.JSON(int(status.InternalServerError), gin.H{
+					"code": status.CreateError,
+					"msg":  msg,
+				})
+				c.Abort()
+				return
+			} else {
+				msg := fmt.Sprintf("创建%s成功", ccp.Item)
+				c.JSON(int(status.OK), gin.H{
+					"code": status.OK,
+					"msg":  msg,
+				})
+				c.Abort()
+				return
+			}
+		} else {
+			c.JSON(int(status.BadRequest), gin.H{
+				"code": status.BadRequest,
+				"msg":  "请求的 URL 与请求的 JSON 不符。",
 			})
 			c.Abort()
 			return
+		}
+	} else {
+		if cp.Item == ccp.Item {
+			err := ccp.ItemUpdate()
+			if err != nil {
+				msg := fmt.Sprintf("更新%s失败", ccp.Item)
+				c.JSON(int(status.InternalServerError), gin.H{
+					"code": status.CreateError,
+					"msg":  msg,
+				})
+				c.Abort()
+				return
+			} else {
+				msg := fmt.Sprintf("更新%s成功", ccp.Item)
+				c.JSON(int(status.OK), gin.H{
+					"code": status.OK,
+					"msg":  msg,
+				})
+				c.Abort()
+				return
+			}
 		} else {
-			msg := fmt.Sprintf("更新%s成功", cp.Item)
-			c.JSON(int(status.OK), gin.H{
-				"code": status.OK,
-				"msg":  msg,
+			c.JSON(int(status.BadRequest), gin.H{
+				"code": status.BadRequest,
+				"msg":  "请求的 URL 与请求的 JSON 不符。",
 			})
 			c.Abort()
 			return
@@ -115,7 +129,7 @@ func PriceAddAndUpdateByItemApi(c *gin.Context) {
 	}
 }
 
-func PriceDeleteByItemApi(c *gin.Context) {
+func PriceDeleteItemApi(c *gin.Context) {
 	citem := c.Param("item")
 	sn := c.Param("service_number")
 	sng, _ := c.Get("server_number")

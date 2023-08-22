@@ -6,13 +6,14 @@ import (
 	"strings"
 	"time"
 
+	database "github.com/2mf8/QQBotOffical/data"
 	"github.com/2mf8/QQBotOffical/status"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtKey = []byte("@#$%^&2mf8kequ._AFJK")
-var jwtRefreshKey = []byte("jku838%$_.djkjghjd")
+var jwtKey = []byte(database.AllConfig.JwtKey)
+var jwtRefreshKey = []byte(database.AllConfig.RefreshKey)
 var setUsername = ""
 var setUserRole = 0
 var setServerNumber = ""

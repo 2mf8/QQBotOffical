@@ -21,6 +21,8 @@ type Config struct {
 	RedisPassword    string
 	RedisTable       int
 	RedisPoolSize    int
+	JwtKey           string
+	RefreshKey       string
 }
 
 var Conf *Config = &Config{}
