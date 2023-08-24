@@ -54,3 +54,4 @@ gmc_android-sources.jar
 *.syso
 *.rc
 data/data_conn.go
+*.json

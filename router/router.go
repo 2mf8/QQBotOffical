@@ -12,11 +12,11 @@ func InitRouter() *gin.Engine {
 	r.Use(middleware.CORS())
 	r.GET("/", api.IndexApi)
 	r.POST("/login", api.TokenGetApi)
-	r.GET("/price/:service_number/:item", middleware.JWTAuthMiddlewareOrRefreshToken(), api.PriceGetItemApi)
+	/*r.GET("/price/:service_number/:item", middleware.JWTAuthMiddlewareOrRefreshToken(), api.PriceGetItemApi)
 	r.GET("/prices/:service_number/:key", api.PriceGetItemsApi)
 	r.GET("/prices/:service_number", api.PriceGetItemsAllApi)
 	r.POST("/price/:service_number", middleware.JWTAuthMiddlewareOrRefreshToken(), api.PriceAddAndUpdateByItemApi)
 	r.POST("/price/:service_number/:item", middleware.JWTAuthMiddlewareOrRefreshToken(), api.PriceAddAndUpdateByItemApi)
-	r.DELETE("/price/:service_number/:item", middleware.JWTAuthMiddlewareOrRefreshToken(), api.PriceDeleteItemApi)
+	r.DELETE("/price/:service_number/:item", middleware.JWTAuthMiddlewareOrRefreshToken(), api.PriceDeleteItemApi)*/
 	return r
 }

@@ -39,7 +39,7 @@ func main() {
 	//go database.GetAll()
 
 	tomlData := `
-	Plugins = ["守卫","开关","复读","WCA","回复","频道管理","赛季","查价","打乱","学习"]   # 插件管理
+	Plugins = ["守卫","开关","复读","服务号","WCA","回复","频道管理","赛季","查价","打乱","学习"]   # 插件管理
 	AppId = 0 # 机器人AppId
 	AccessToken = "" # 机器人AccessToken
 	Admins = [""]   # 机器人管理员管理
@@ -153,12 +153,9 @@ func main() {
 				fmt.Println(t, cs)
 				if strings.TrimSpace(t) == "10000" {
 					role = 1 << 30
-				}
-				if strings.TrimSpace(t) == "10001" {
-					role = 1 << 1
-				}
-				if strings.TrimSpace(t) == "10002" {
-					role = 1 << 2
+				} else {
+					sng, _ := database.ServerNumbersGet()
+					role = 1 << sng.ServerNumberSetSync.Intent[sng.ServerNumberSetSync.ServerNumbers[strings.TrimSpace(t)]]
 				}
 				for _, _ui := range cs {
 					_u, err := api.GuildMember(ctx, guildId, _ui)
@@ -195,7 +192,7 @@ func main() {
 				}
 			}
 			if userId == "18155629338841245002" {
-				role = 1 << 2 //奇乐
+				role = 1 << 1 //奇乐
 				for _, _ui := range cs {
 					_u, err := api.GuildMember(ctx, guildId, _ui)
 					if err != nil {
@@ -256,6 +253,7 @@ func main() {
 				for _, r := range guildRoles.Roles {
 					if r.Name != "普通成员" && r.Name != "访客" {
 						gRoles = append(gRoles, string(r.ID))
+						fmt.Println(r.Name, r.ID)
 					}
 				}
 			}

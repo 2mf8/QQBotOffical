@@ -90,22 +90,25 @@ func UserInfoSave(user_id, user_name, user_avatar, server_number, password, emai
 		ui_get.Username = user_name
 	}
 	if user_avatar.String != "" {
-		ui.UserAvatar = user_avatar
+		ui_get.UserAvatar = user_avatar
 	}
 	if server_number.String != "" {
-		ui.ServerNumber = server_number
+		ui_get.ServerNumber = server_number
 	}
 	if password.String != "" {
-		ui.Password = password
+		ui_get.Password = password
 	}
 	if email.String != "" {
-		ui.Email = email
+		ui_get.Email = email
 	}
 	if qq_union_id.String != "" {
-		ui.QQUnionId = qq_union_id
+		ui_get.QQUnionId = qq_union_id
 	}
 	if weixin_union_id.String != "" {
-		ui.WeixinUnionId = weixin_union_id
+		ui_get.WeixinUnionId = weixin_union_id
+	}
+	if user_role > 0 {
+		ui_get.UserRole = user_role
 	}
 	err = ui_get.UserInfoUpdate()
 	return

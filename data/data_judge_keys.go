@@ -54,9 +54,11 @@ func GetJudgeKeys() (key JudgekeysSync, err error) {
 	c.Send("Get", bw)
 	c.Flush()
 	vb, err = redis.Bytes(c.Receive())
+	//fmt.Println(string(vb))
 	if err != nil {
 		fmt.Println("[查询] 首次查询-守卫", bw)
 		jk, err := JudgeKeysRead()
+		//fmt.Println(jk, err)
 		key.JudgekeysSync = &jk
 		if err != nil {
 			key = JudgekeysSync{
@@ -76,7 +78,7 @@ func GetJudgeKeys() (key JudgekeysSync, err error) {
 	if err != nil {
 		fmt.Println("[错误] Unmarshal出错")
 	}
-	//fmt.Println("[Redis] Key(", bw, ") Value(", key.IsTrue, *key.JudgekeysSync, ")")  //测试用
+	//fmt.Println("[Redis] Key(", bw, ") Value(", key.IsTrue, *key.JudgekeysSync, ")") //测试用
 	return
 }
 
@@ -146,6 +148,9 @@ func (k *JudgekeysSync) JudgeKeysDelete(dk ...string) {
 		if i != -1 {
 			if k.JudgekeysSync.Keys[i+1:] != nil {
 				k.JudgekeysSync.Keys = append(k.JudgekeysSync.Keys[:i], k.JudgekeysSync.Keys[i+1:]...)
+				i--
+			} else {
+				k.JudgekeysSync.Keys = k.JudgekeysSync.Keys[:i]
 				i--
 			}
 		}

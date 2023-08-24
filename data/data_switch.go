@@ -236,7 +236,7 @@ func SGBGIACI(guildId, channelId string) (bot_switch_sync SwitchSync, err error)
 	if err != nil {
 		fmt.Println("[错误] Unmarshal出错")
 	}
-	//fmt.Println("[Redis] Key(", bw, ") Value(", bot_switch_sync.IsTrue, *bot_switch_sync.PluginSwitch, ")")  //测试用
+	fmt.Println("[Redis] Key(", bw, ") Value(", bot_switch_sync.IsTrue, *bot_switch_sync.PluginSwitch, ")")  //测试用
 	return
 }
 

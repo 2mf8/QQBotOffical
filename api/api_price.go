@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"time"
 
 	database "github.com/2mf8/QQBotOffical/data"
 	"github.com/2mf8/QQBotOffical/status"
 	"github.com/gin-gonic/gin"
+	"gopkg.in/guregu/null.v3"
 )
 
 func IndexApi(c *gin.Context) {
@@ -18,7 +20,11 @@ func PriceAddAndUpdateByItemApi(c *gin.Context) {
 	citem := c.Param("item")
 	sn := c.Param("service_number")
 	sng, _ := c.Get("server_number")
-	if !(sn == sng || sng == "10000") {
+	u_id, _ := c.Get("user_id")
+	role, _ := c.Get("user_role")
+	u_time := time.Now()
+	fmt.Println(sn, "=?", sng, role, role.(int))
+	if !(sn == sng || sng == "10000") || !(role.(int) > 0 && role.(int) < 8) {
 		c.JSON(int(status.ExpectationFailed), gin.H{
 			"code": status.Forbidden,
 			"msg":  "禁止访问，您权限不足。",
@@ -37,6 +43,8 @@ func PriceAddAndUpdateByItemApi(c *gin.Context) {
 	if ccp.ChannelId == "" {
 		ccp.ChannelId = sn
 	}
+	ccp.GmtModified = null.NewTime(u_time, true)
+	ccp.Updater = null.NewString(u_id.(string), true)
 	if citem == "" {
 		if ccp.Item == "" {
 			c.JSON(int(status.BadRequest), gin.H{
@@ -67,6 +75,7 @@ func PriceAddAndUpdateByItemApi(c *gin.Context) {
 		}
 	}
 	cp, err := database.GetItem(sn, sn, citem)
+	fmt.Println(sn, citem, cp, err)
 	if err != nil {
 		if ccp.Item == "" {
 			ccp.Item = citem
@@ -100,7 +109,30 @@ func PriceAddAndUpdateByItemApi(c *gin.Context) {
 		}
 	} else {
 		if cp.Item == ccp.Item {
-			err := ccp.ItemUpdate()
+			if cp.Brand.Valid {
+				cp.Brand = ccp.Brand
+			} else {
+				cp.Brand = null.NewString(ccp.Brand.String, true)
+			}
+			if cp.Price.Valid {
+				cp.Price = ccp.Price
+			} else {
+				cp.Price = null.NewString(ccp.Price.String, true)
+			}
+			cp.GmtModified = null.NewTime(u_time, true)
+			cp.IsMagnetism = ccp.IsMagnetism
+			if cp.Shipping.Valid {
+				cp.Shipping = ccp.Shipping
+			} else {
+				cp.Shipping = null.NewString(ccp.Shipping.String, true)
+			}
+			cp.Updater = null.NewString(u_id.(string), true)
+			if cp.MagnetismType.Valid {
+				cp.MagnetismType = ccp.MagnetismType
+			} else {
+				cp.MagnetismType = null.NewString(ccp.MagnetismType.String, true)
+			}
+			err := cp.ItemUpdate()
 			if err != nil {
 				msg := fmt.Sprintf("更新%s失败", ccp.Item)
 				c.JSON(int(status.InternalServerError), gin.H{
@@ -133,7 +165,8 @@ func PriceDeleteItemApi(c *gin.Context) {
 	citem := c.Param("item")
 	sn := c.Param("service_number")
 	sng, _ := c.Get("server_number")
-	if !(sn == sng || sng == "10000") {
+	role, _ := c.Get("user_role")
+	if !(sn == sng || sng == "10000") || !(role.(int) > 0 && role.(int) < 8) {
 		c.JSON(int(status.ExpectationFailed), gin.H{
 			"code": status.Forbidden,
 			"msg":  "禁止访问，您权限不足。",

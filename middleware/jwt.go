@@ -17,6 +17,7 @@ var jwtRefreshKey = []byte(database.AllConfig.RefreshKey)
 var setUsername = ""
 var setUserRole = 0
 var setServerNumber = ""
+var setUserId = ""
 
 type JwtClaims struct {
 	UserId       string `json:"user_id"`
@@ -98,6 +99,7 @@ func RefreshTokens(refreshTokens [2]string, timeout int) ([2]string, string, [2]
 		setUsername = rj.Username
 		setUserRole = rj.UserRole
 		setServerNumber = rj.ServerNumber
+		setUserId = rj.UserId
 		rtg := GenJwtClaims(rj.UserId, rj.Username, rj.UserAvatar, rj.ServerNumber, rj.Email, rj.UserRole, timeout*6)
 		rt, e2 := rtg.GenToken(bs[1])
 		tokens[1] = rt
@@ -109,6 +111,7 @@ func RefreshTokens(refreshTokens [2]string, timeout int) ([2]string, string, [2]
 	setUsername = _r.Username
 	setUserRole = _r.UserRole
 	setServerNumber = _r.ServerNumber
+	setUserId = _r.UserId
 	status := "登录状态正常"
 	tokens = refreshTokens
 	return tokens, status, errs
@@ -131,54 +134,55 @@ func JWTAuthMiddlewareOrRefreshToken() func(c *gin.Context) {
 		tokens := [2]string{}
 		authHeader := c.Request.Header.Get("Authorization")
 		fmt.Println(authHeader)
-		if c.Request.Method == "POST" {
-			if authHeader == "" {
-				c.JSON(int(status.Unauthorized), gin.H{
-					"code": status.TokenNull,
-					"msg":  "访问失败，token为空，请登录",
-				})
-				c.Abort()
-				return
+		//if c.Request.Method != "GET" {
+		if authHeader == "" {
+			c.JSON(int(status.Unauthorized), gin.H{
+				"code": status.TokenNull,
+				"msg":  "访问失败，token为空，请登录",
+			})
+			c.Abort()
+			return
+		}
+		parts := strings.SplitN(authHeader, " ", 2)
+		if !(len(parts) == 2 && parts[0] == "Bearer") {
+			c.JSON(int(status.Unauthorized), gin.H{
+				"code": status.TokenInvalid,
+				"msg":  "访问失败，无效的token，请登录。",
+			})
+			c.Abort()
+			return
+		}
+		tokens[0] = parts[1]
+		refreshHeader := c.Request.Header.Get("Refresh")
+		fmt.Println(refreshHeader)
+		if refreshHeader != "" {
+			rparts := strings.SplitN(refreshHeader, " ", 2)
+			if len(rparts) == 2 && rparts[0] == "Bearer" {
+				tokens[1] = rparts[1]
 			}
-			parts := strings.SplitN(authHeader, " ", 2)
-			if !(len(parts) == 2 && parts[0] == "Bearer") {
-				c.JSON(int(status.Unauthorized), gin.H{
-					"code": status.TokenInvalid,
-					"msg":  "访问失败，无效的token，请登录。",
-				})
-				c.Abort()
-				return
-			}
-			tokens[0] = parts[1]
-			refreshHeader := c.Request.Header.Get("Refresh")
-			fmt.Println(refreshHeader)
-			if refreshHeader != "" {
-				rparts := strings.SplitN(refreshHeader, " ", 2)
-				if len(rparts) == 2 && rparts[0] == "Bearer" {
-					tokens[1] = rparts[1]
-				}
-			}
-			_, _status, _ := RefreshTokens(tokens, 2)
-			if !strings.Contains(_status, "状态正常") {
-				c.JSON(int(status.ExpectationFailed), gin.H{
-					"code": 200,
-					"msg":  _status,
-				})
-				c.Abort()
-				return
-			}
-			c.Set("user_name", setUsername)
-			c.Set("user_role", setUserRole)
-			c.Set("server_number", setServerNumber)
-			c.Next()
-		} else {
+		}
+		_, _status, _ := RefreshTokens(tokens, 2)
+		if !strings.Contains(_status, "状态正常") {
+			c.JSON(int(status.ExpectationFailed), gin.H{
+				"code": 200,
+				"msg":  _status,
+			})
+			c.Abort()
+			return
+		}
+		c.Set("user_name", setUsername)
+		c.Set("user_role", setUserRole)
+		c.Set("server_number", setServerNumber)
+		c.Set("user_id", setUserId)
+		c.Next()
+		/*} else {
 			c.JSON(int(status.MethodNotAllowed), gin.H{
 				"code": status.MethodNotAllowed,
 				"msg":  "请使用 POST 方法提交",
 			})
 			c.Abort()
 			return
-		}
+		}*/
 	}
 }
 

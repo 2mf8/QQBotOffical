@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/2mf8/QQBotOffical/config"
@@ -11,41 +12,49 @@ import (
 )
 
 type CuberPrice struct {
-	Id          int64       `json:"id"`
-	GuildId     string      `json:"guild_id"`
-	ChannelId   string      `json:"channel_id"`
-	Brand       null.String `json:"brand"`
-	Item        string      `json:"item"`
-	Price       null.String `json:"price"`
-	Shipping    null.String `json:"shipping"`
-	Updater     null.String `json:"updater"`
-	GmtModified null.Time   `json:"gmt_modified"`
-	IsMagnetism bool        `json:"is_magnetism"`
+	Id            int64       `json:"id"`
+	GuildId       string      `json:"guild_id"`
+	ChannelId     string      `json:"channel_id"`
+	Brand         null.String `json:"brand"`
+	Item          string      `json:"item"`
+	Price         null.String `json:"price"`
+	Shipping      null.String `json:"shipping"`
+	Updater       null.String `json:"updater"`
+	GmtModified   null.Time   `json:"gmt_modified"`
+	IsMagnetism   bool        `json:"is_magnetism"`
+	MagnetismType null.String `json:"magnetism_type"`
 }
 
 type TempCuberPrice struct {
-	Id          int64       `json:"id"`
-	GuildId     null.String `json:"guild_id"`
-	ChannelId   null.String `json:"channel_id"`
-	Brand       null.String `json:"brand"`
-	Item        string      `json:"item"`
-	Price       null.String `json:"price"`
-	Shipping    null.String `json:"shipping"`
-	Updater     null.String `json:"updater"`
-	GmtModified null.Time   `json:"gmt_modified"`
-	IsMagnetism bool        `json:"is_magnetism"`
+	Id            int64       `json:"id"`
+	GuildId       null.String `json:"guild_id"`
+	ChannelId     null.String `json:"channel_id"`
+	Brand         null.String `json:"brand"`
+	Item          string      `json:"item"`
+	Price         null.String `json:"price"`
+	Shipping      null.String `json:"shipping"`
+	Updater       null.String `json:"updater"`
+	GmtModified   null.Time   `json:"gmt_modified"`
+	IsMagnetism   bool        `json:"is_magnetism"`
+	MagnetismType null.String `json:"magnetism_type"`
 }
 
 // is_magnetism
 func GetItem(guildId, channelId string, item string) (cp CuberPrice, err error) {
+	statment := ""
 	cp = CuberPrice{}
-	statment := fmt.Sprintf("select ID, guild_id, channel_id, brand, item, price, shipping, updater, gmt_modified, is_magnetism from [%s].[dbo].[guild_price] where guild_id = $1 and channel_id = $3 and (item = $2 or ID = $2)", config.Conf.DatabaseName)
-	err = Db.QueryRow(statment, guildId, item, channelId).Scan(&cp.Id, &cp.GuildId, &cp.ChannelId, &cp.Brand, &cp.Item, &cp.Price, &cp.Shipping, &cp.Updater, &cp.GmtModified, &cp.IsMagnetism)
+	_, err = strconv.Atoi(item)
+	if err != nil {
+		statment = fmt.Sprintf("select ID, guild_id, channel_id, brand, item, price, shipping, updater, gmt_modified, is_magnetism, magnetism_type from [%s].[dbo].[guild_price] where guild_id = $1 and channel_id = $3 and item = $2", config.Conf.DatabaseName)
+	} else {
+		statment = fmt.Sprintf("select ID, guild_id, channel_id, brand, item, price, shipping, updater, gmt_modified, is_magnetism, magnetism_type from [%s].[dbo].[guild_price] where guild_id = $1 and channel_id = $3 and ID = $2", config.Conf.DatabaseName)
+	}
+	err = Db.QueryRow(statment, guildId, item, channelId).Scan(&cp.Id, &cp.GuildId, &cp.ChannelId, &cp.Brand, &cp.Item, &cp.Price, &cp.Shipping, &cp.Updater, &cp.GmtModified, &cp.IsMagnetism, &cp.MagnetismType)
 	return
 }
 
 func GetItems(guildId, channelId string, key string) (cps []CuberPrice, err error) {
-	statment := fmt.Sprintf("select ID, guild_id, channel_id, brand, item, price, shipping, updater, gmt_modified, is_magnetism from [%s].[dbo].[guild_price] where guild_id = '%s' and channel_id = '%s' and item like '%%%s%%'", config.Conf.DatabaseName, guildId, channelId, key)
+	statment := fmt.Sprintf("select ID, guild_id, channel_id, brand, item, price, shipping, updater, gmt_modified, is_magnetism, magnetism_type from [%s].[dbo].[guild_price] where guild_id = '%s' and channel_id = '%s' and item like '%%%s%%'", config.Conf.DatabaseName, guildId, channelId, key)
 	rows, err := Db.Query(statment)
 	if err != nil {
 		return
@@ -53,14 +62,14 @@ func GetItems(guildId, channelId string, key string) (cps []CuberPrice, err erro
 	defer rows.Close()
 	for rows.Next() {
 		cp := CuberPrice{}
-		err = rows.Scan(&cp.Id, &cp.GuildId, &cp.ChannelId, &cp.Brand, &cp.Item, &cp.Price, &cp.Shipping, &cp.Updater, &cp.GmtModified, &cp.IsMagnetism)
+		err = rows.Scan(&cp.Id, &cp.GuildId, &cp.ChannelId, &cp.Brand, &cp.Item, &cp.Price, &cp.Shipping, &cp.Updater, &cp.GmtModified, &cp.IsMagnetism, &cp.MagnetismType)
 		cps = append(cps, cp)
 	}
 	return
 }
 
 func GetItemsAll(guildId, channelId string) (cps []CuberPrice, err error) {
-	statment := fmt.Sprintf("select ID, guild_id, channel_id, brand, item, price, shipping, updater, gmt_modified, is_magnetism from [%s].[dbo].[guild_price] where guild_id = '%s' and channel_id = '%s'", config.Conf.DatabaseName, guildId, channelId)
+	statment := fmt.Sprintf("select ID, guild_id, channel_id, brand, item, price, shipping, updater, gmt_modified, is_magnetism, magnetism_type from [%s].[dbo].[guild_price] where guild_id = '%s' and channel_id = '%s'", config.Conf.DatabaseName, guildId, channelId)
 	rows, err := Db.Query(statment)
 	if err != nil {
 		return
@@ -68,26 +77,26 @@ func GetItemsAll(guildId, channelId string) (cps []CuberPrice, err error) {
 	defer rows.Close()
 	for rows.Next() {
 		cp := CuberPrice{}
-		err = rows.Scan(&cp.Id, &cp.GuildId, &cp.ChannelId, &cp.Brand, &cp.Item, &cp.Price, &cp.Shipping, &cp.Updater, &cp.GmtModified, &cp.IsMagnetism)
+		err = rows.Scan(&cp.Id, &cp.GuildId, &cp.ChannelId, &cp.Brand, &cp.Item, &cp.Price, &cp.Shipping, &cp.Updater, &cp.GmtModified, &cp.IsMagnetism, &cp.MagnetismType)
 		cps = append(cps, cp)
 	}
 	return
 }
 
 func (cp *CuberPrice) ItemCreate() (err error) {
-	statement := fmt.Sprintf("insert into [%s].[dbo].[guild_price] values ($1, $2, $3, $4, $5, $6, $7, $8, $9) select @@identity", config.Conf.DatabaseName)
+	statement := fmt.Sprintf("insert into [%s].[dbo].[guild_price] values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) select @@identity", config.Conf.DatabaseName)
 	stmt, err := Db.Prepare(statement)
 	if err != nil {
 		return
 	}
 	defer stmt.Close()
-	err = stmt.QueryRow(cp.GuildId, cp.ChannelId, cp.Brand, cp.Item, cp.Price, cp.Shipping, cp.Updater, cp.GmtModified, cp.IsMagnetism).Scan(&cp.Id)
+	err = stmt.QueryRow(cp.GuildId, cp.ChannelId, cp.Brand, cp.Item, cp.Price, cp.Shipping, cp.Updater, cp.GmtModified, cp.IsMagnetism, cp.MagnetismType).Scan(&cp.Id)
 	return
 }
 
 func (cp *CuberPrice) ItemUpdate() (err error) {
-	statment := fmt.Sprintf("update [%s].[dbo].[guild_price] set guild_id = $2, channel_id = $9, brand = $3, item = $4, price = $5, shipping = $6, updater = $7, gmt_modified = $8, is_magnetism = $10 where ID = $1", config.Conf.DatabaseName)
-	_, err = Db.Exec(statment, cp.Id, cp.GuildId, cp.Brand, cp.Item, cp.Price.String, cp.Shipping.String, cp.Updater, cp.GmtModified, cp.ChannelId, cp.IsMagnetism)
+	statment := fmt.Sprintf("update [%s].[dbo].[guild_price] set guild_id = $2, channel_id = $9, brand = $3, item = $4, price = $5, shipping = $6, updater = $7, gmt_modified = $8, is_magnetism = $10, magnetism_type = $11 where ID = $1", config.Conf.DatabaseName)
+	_, err = Db.Exec(statment, cp.Id, cp.GuildId, cp.Brand, cp.Item, cp.Price.String, cp.Shipping.String, cp.Updater, cp.GmtModified, cp.ChannelId, cp.IsMagnetism, cp.MagnetismType)
 	return
 }
 
@@ -97,17 +106,18 @@ func (cp *CuberPrice) ItemDeleteById() (err error) {
 	return
 }
 
-func ItemSave(guildId, channelId string, brand null.String, item string, price null.String, shipping null.String, updater null.String, gmtModified null.Time, is_magnetism bool) (err error) {
+func ItemSave(guildId, channelId string, brand null.String, item string, price null.String, shipping null.String, updater null.String, gmtModified null.Time, is_magnetism bool, magnetism_type null.String) (err error) {
 	cp := CuberPrice{
-		GuildId:     guildId,
-		ChannelId:   channelId,
-		Brand:       brand,
-		Item:        item,
-		Price:       price,
-		Shipping:    shipping,
-		Updater:     updater,
-		GmtModified: gmtModified,
-		IsMagnetism: is_magnetism,
+		GuildId:       guildId,
+		ChannelId:     channelId,
+		Brand:         brand,
+		Item:          item,
+		Price:         price,
+		Shipping:      shipping,
+		Updater:       updater,
+		GmtModified:   gmtModified,
+		IsMagnetism:   is_magnetism,
+		MagnetismType: magnetism_type,
 	}
 	cp_get, err := GetItem(guildId, channelId, item)
 	if err != nil {
@@ -135,7 +145,7 @@ func IDBGAN(guildId, channelId, item string) (err error) {
 
 func GetAll() (err error) {
 	ii := 0
-	statment := fmt.Sprintf("select guild_id, channel_id, brand, item, price, shipping, updater, gmt_modified, is_magnetism from [%s].[dbo].[guild_price]", config.Conf.DatabaseName)
+	statment := fmt.Sprintf("select guild_id, channel_id, brand, item, price, shipping, updater, gmt_modified, is_magnetism, magnetism_type from [%s].[dbo].[guild_price]", config.Conf.DatabaseName)
 	rows, err := Db.Query(statment)
 	fmt.Println(err)
 	if err != nil {
@@ -145,10 +155,10 @@ func GetAll() (err error) {
 	for rows.Next() {
 		fmt.Println(ii)
 		cp := CuberPrice{}
-		err = rows.Scan(&cp.GuildId, &cp.ChannelId, &cp.Brand, &cp.Item, &cp.Price, &cp.Shipping, &cp.Updater, &cp.GmtModified, &cp.IsMagnetism)
+		err = rows.Scan(&cp.GuildId, &cp.ChannelId, &cp.Brand, &cp.Item, &cp.Price, &cp.Shipping, &cp.Updater, &cp.GmtModified, &cp.IsMagnetism, &cp.MagnetismType)
 		if strings.Contains(cp.Item, "磁") {
 			cp.IsMagnetism = true
-			ItemSave(cp.GuildId, cp.ChannelId, cp.Brand, cp.Item, cp.Price, cp.Shipping, cp.Updater, cp.GmtModified, cp.IsMagnetism)
+			ItemSave(cp.GuildId, cp.ChannelId, cp.Brand, cp.Item, cp.Price, cp.Shipping, cp.Updater, cp.GmtModified, cp.IsMagnetism, cp.MagnetismType)
 		}
 		ii++
 	}
