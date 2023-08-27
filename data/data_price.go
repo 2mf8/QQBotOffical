@@ -83,15 +83,15 @@ func GetItemsAll(guildId, channelId string) (cps []CuberPrice, err error) {
 	return
 }
 
-func (cp *CuberPrice) ItemCreate() (err error) {
+func (cp *CuberPrice) ItemCreate() (id int64, err error) {
 	statement := fmt.Sprintf("insert into [%s].[dbo].[guild_price] values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) select @@identity", config.Conf.DatabaseName)
 	stmt, err := Db.Prepare(statement)
 	if err != nil {
-		return
+		return -1, err
 	}
 	defer stmt.Close()
 	err = stmt.QueryRow(cp.GuildId, cp.ChannelId, cp.Brand, cp.Item, cp.Price, cp.Shipping, cp.Updater, cp.GmtModified, cp.IsMagnetism, cp.MagnetismType).Scan(&cp.Id)
-	return
+	return cp.Id, err
 }
 
 func (cp *CuberPrice) ItemUpdate() (err error) {
@@ -106,7 +106,7 @@ func (cp *CuberPrice) ItemDeleteById() (err error) {
 	return
 }
 
-func ItemSave(guildId, channelId string, brand null.String, item string, price null.String, shipping null.String, updater null.String, gmtModified null.Time, is_magnetism bool, magnetism_type null.String) (err error) {
+func ItemSave(guildId, channelId string, brand null.String, item string, price null.String, shipping null.String, updater null.String, gmtModified null.Time, is_magnetism bool, magnetism_type null.String) (id int64, err error) {
 	cp := CuberPrice{
 		GuildId:       guildId,
 		ChannelId:     channelId,
@@ -121,7 +121,7 @@ func ItemSave(guildId, channelId string, brand null.String, item string, price n
 	}
 	cp_get, err := GetItem(guildId, channelId, item)
 	if err != nil {
-		err = cp.ItemCreate()
+		id, err = cp.ItemCreate()
 		return
 	}
 	cp_get.Price = price
@@ -130,7 +130,7 @@ func ItemSave(guildId, channelId string, brand null.String, item string, price n
 	}
 	cp_get.IsMagnetism = is_magnetism
 	err = cp_get.ItemUpdate()
-	return
+	return cp_get.Id, err
 }
 
 // ItemDeleteByGuildIdAndName

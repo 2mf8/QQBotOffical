@@ -64,14 +64,14 @@ func TokenGetApi(c *gin.Context) {
 			c.Abort()
 			return
 		} else {
-			/*c.JSON(http.StatusOK, gin.H{
+			c.JSON(http.StatusOK, gin.H{
 				"code":      200,
 				"msg":       "登录成功",
 				"token":     ts[0],
 				"refresh":   ts[1],
 				"user_info": u,
-			})*/
-			c.String(http.StatusOK, `curl -H "Authorization: Bearer %s" -H "Refresh: Bearer %s" http://localhost:8080/prices/四`, ts[0], ts[1])
+			})
+			//c.String(http.StatusOK, `curl -H "Authorization: Bearer %s" -H "Refresh: Bearer %s" http://localhost:8080/prices/四`, ts[0], ts[1])
 		}
 	} else {
 		c.JSON(int(status.ExpectationFailed), gin.H{

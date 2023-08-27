@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
 
 	database "github.com/2mf8/QQBotOffical/data"
@@ -43,6 +44,9 @@ func PriceAddAndUpdateByItemApi(c *gin.Context) {
 	if ccp.ChannelId == "" {
 		ccp.ChannelId = sn
 	}
+	if strings.Contains(citem, "磁") {
+		ccp.IsMagnetism = true
+	}
 	ccp.GmtModified = null.NewTime(u_time, true)
 	ccp.Updater = null.NewString(u_id.(string), true)
 	if citem == "" {
@@ -54,12 +58,13 @@ func PriceAddAndUpdateByItemApi(c *gin.Context) {
 			c.Abort()
 			return
 		} else {
-			err := ccp.ItemCreate()
+			id, err := ccp.ItemCreate()
 			if err != nil {
 				msg := fmt.Sprintf("创建%s失败", ccp.Item)
 				c.JSON(int(status.InternalServerError), gin.H{
 					"code": status.CreateError,
 					"msg":  msg,
+					"id":   -1,
 				})
 				c.Abort()
 				return
@@ -68,6 +73,7 @@ func PriceAddAndUpdateByItemApi(c *gin.Context) {
 				c.JSON(int(status.OK), gin.H{
 					"code": status.OK,
 					"msg":  msg,
+					"id":   id,
 				})
 				c.Abort()
 				return
@@ -81,12 +87,13 @@ func PriceAddAndUpdateByItemApi(c *gin.Context) {
 			ccp.Item = citem
 		}
 		if ccp.Item == citem {
-			err := ccp.ItemCreate()
+			id, err := ccp.ItemCreate()
 			if err != nil {
 				msg := fmt.Sprintf("创建%s失败", ccp.Item)
 				c.JSON(int(status.InternalServerError), gin.H{
 					"code": status.CreateError,
 					"msg":  msg,
+					"id":   id,
 				})
 				c.Abort()
 				return
@@ -95,6 +102,7 @@ func PriceAddAndUpdateByItemApi(c *gin.Context) {
 				c.JSON(int(status.OK), gin.H{
 					"code": status.OK,
 					"msg":  msg,
+					"id":   id,
 				})
 				c.Abort()
 				return
@@ -132,6 +140,7 @@ func PriceAddAndUpdateByItemApi(c *gin.Context) {
 			} else {
 				cp.MagnetismType = null.NewString(ccp.MagnetismType.String, true)
 			}
+			cp.IsMagnetism = ccp.IsMagnetism
 			err := cp.ItemUpdate()
 			if err != nil {
 				msg := fmt.Sprintf("更新%s失败", ccp.Item)

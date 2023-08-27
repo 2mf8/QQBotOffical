@@ -108,7 +108,7 @@ func (price *PricePlugin) Do(ctx *context.Context, admins []string, gmap map[str
 			}
 			str6 := strings.Split(str5[1], "#?")
 			if len(str6) != 2 {
-				err := database.ItemSave("10001", "10001", null.String{}, str5[0], null.NewString(str6[0], true), null.String{}, null.NewString(userId, true), null.NewTime(time.Now(), true), is_magnetism, null.String{})
+				_, err := database.ItemSave("10001", "10001", null.String{}, str5[0], null.NewString(str6[0], true), null.String{}, null.NewString(userId, true), null.NewTime(time.Now(), true), is_magnetism, null.String{})
 				if err != nil {
 					replyText := "添加失败"
 					log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, replyText)
@@ -132,7 +132,7 @@ func (price *PricePlugin) Do(ctx *context.Context, admins []string, gmap map[str
 					ReqType: utils.GuildMsg,
 				}
 			}
-			err := database.ItemSave("10001", "10001", null.String{}, str5[0], null.NewString(str6[0], true), null.NewString(str6[1], true), null.NewString(userId, true), null.NewTime(time.Now(), true), is_magnetism, null.String{})
+			_, err := database.ItemSave("10001", "10001", null.String{}, str5[0], null.NewString(str6[0], true), null.NewString(str6[1], true), null.NewString(userId, true), null.NewTime(time.Now(), true), is_magnetism, null.String{})
 			if err != nil {
 				replyText := "添加失败"
 				log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, replyText)
@@ -276,7 +276,7 @@ func (price *PricePlugin) Do(ctx *context.Context, admins []string, gmap map[str
 			}
 			str6 := strings.Split(str5[1], "#?")
 			if len(str6) != 2 {
-				err := database.ItemSave("10002", "10002", null.String{}, str5[0], null.NewString(str6[0], true), null.String{}, null.NewString(userId, true), null.NewTime(time.Now(), true), is_magnetism, null.String{})
+				_, err := database.ItemSave("10002", "10002", null.String{}, str5[0], null.NewString(str6[0], true), null.String{}, null.NewString(userId, true), null.NewTime(time.Now(), true), is_magnetism, null.String{})
 				if err != nil {
 					replyText := "添加失败"
 					log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, replyText)
@@ -300,7 +300,7 @@ func (price *PricePlugin) Do(ctx *context.Context, admins []string, gmap map[str
 					ReqType: utils.GuildMsg,
 				}
 			}
-			err := database.ItemSave("10002", "10002", null.String{}, str5[0], null.NewString(str6[0], true), null.NewString(str6[1], true), null.NewString(userId, true), null.NewTime(time.Now(), true), is_magnetism, null.String{})
+			_, err := database.ItemSave("10002", "10002", null.String{}, str5[0], null.NewString(str6[0], true), null.NewString(str6[1], true), null.NewString(userId, true), null.NewTime(time.Now(), true), is_magnetism, null.String{})
 			if err != nil {
 				replyText := "添加失败"
 				log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, replyText)
