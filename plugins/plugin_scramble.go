@@ -23,10 +23,11 @@ func (scramble *ScramblePlugin) Do(ctx *context.Context, admins []string, gmap m
 		}
 	}
 
-	ins := database.Tnoodle(s).Instruction
-	shor := database.Tnoodle(s).ShortName
-	show := database.Tnoodle(s).ShowName
-	if ins == s && ins != "instruction" {
+	tn := database.Tnoodle(s)
+	ins := tn.Instruction
+	shor := tn.ShortName
+	show := tn.ShowName
+	if ins != "instruction" {
 		gs := database.GetScramble(shor)
 		if public.StartsWith(gs, "net") || gs == "获取失败" {
 			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> 获取打乱失败", guildId, channelId, userId)
