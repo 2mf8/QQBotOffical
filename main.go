@@ -2,8 +2,8 @@
 package main
 
 import (
+	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	_api "github.com/2mf8/QQBotOffical/api"
 	database "github.com/2mf8/QQBotOffical/data"
+	_dto "github.com/2mf8/QQBotOffical/dto"
 	_ "github.com/2mf8/QQBotOffical/plugins"
 	"github.com/2mf8/QQBotOffical/public"
 	"github.com/2mf8/QQBotOffical/router"
@@ -28,6 +28,7 @@ import (
 	"github.com/tencent-connect/botgo/openapi"
 	"github.com/tencent-connect/botgo/token"
 	"github.com/tencent-connect/botgo/websocket"
+	"google.golang.org/protobuf/proto"
 	"gopkg.in/guregu/null.v3"
 )
 
@@ -223,17 +224,10 @@ func main() {
 
 		if rawMsg == ".登录" {
 			randomString := public.RandomString(6)
-			l := _api.Login{
-				Account: userId,
-				Code:    randomString,
-			}
-			bl, err := json.Marshal(l)
-			if err != nil {
-				fmt.Println(err)
-			}
-			database.RedisSet(userId, bl)
+			database.RedisSet(randomString, []byte(userId))
 			//go GetT(userId)
-			fmt.Printf("curl -X POST -H \"Content-Type:application/json\" -d \"{\\\"account\\\":\\\"%s\\\", \\\"code\\\": \\\"%s\\\"}\" http://localhost:8200/login\n", userId, randomString)
+			byteCode, _ := proto.Marshal(&_dto.CodeLoginReq{Code: randomString})
+			fmt.Printf("curl -X POST -H \"Content-Type:application/x-protobuf\" -d %v http://localhost:8200/login\n", bytes.NewBuffer(byteCode))
 			dmsg, err := api.CreateDirectMessage(ctx, &dto.DirectMessageToCreate{
 				SourceGuildID: guildId,
 				RecipientID:   data.Author.ID,
@@ -242,7 +236,7 @@ func main() {
 				log.Warnf("私信出错了，err = %v", err)
 				return nil
 			}
-			api.PostDirectMessage(ctx, dmsg, &dto.MessageToCreate{Content: fmt.Sprintf("登录信息\n账号：%s\n验证码：%s\n注：该验证码五分钟内有效。", userId, randomString), MsgID: data.ID})
+			api.PostDirectMessage(ctx, dmsg, &dto.MessageToCreate{Content: fmt.Sprintf("登录信息\n验证码：%s\n注：该验证码五分钟内有效。", randomString), MsgID: data.ID})
 			api.PostMessage(ctx, channelId, &dto.MessageToCreate{Content: "登录信息已私发，请查看私信。", MsgID: msgId})
 		}
 
@@ -261,7 +255,7 @@ func main() {
 			fmt.Println(rolesMap)
 		}
 
-		if public.IsAdmin(roles) && strings.TrimSpace(rawMsg) == "更新" {
+		if (public.IsAdmin(roles) || public.IsBotAdmin(userId, allconfig.Admins)) && strings.TrimSpace(rawMsg) == "更新" {
 			var gRoles []string
 			guildRoles, err := api.Roles(ctx, guildId)
 			defer api.Roles(ctx, guildId)
@@ -274,7 +268,7 @@ func main() {
 			}
 			rolesMap[guildId] = gRoles
 			// fmt.Println(rolesMap)
-			api.PostMessage(ctx, channelId, &dto.MessageToCreate{Content: "更新成功"})
+			api.PostMessage(ctx, channelId, &dto.MessageToCreate{Content: "更新成功", MsgID: data.ID})
 		}
 
 		if isBotAdmin && public.StartsWith(rawMsg, "信") {

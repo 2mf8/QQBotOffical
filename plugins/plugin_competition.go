@@ -47,7 +47,7 @@ func (rep *Competition) Do(ctx *context.Context, admins []string, gmap map[strin
 	s = strings.TrimSpace(reg3.ReplaceAllString(s, "\"/>"))
 
 	sc, b := public.Prefix(s, "新赛季")
-	if b && isBotAdmin {
+	if b && (isBotAdmin || userId == "7245178405041604418") {
 		if sc == "" {
 			reply := "格式错误"
 			log.Infof("GuildId(%s) ChannelId(%s) UserId(%s) -> %s", guildId, channelId, userId, reply)

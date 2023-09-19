@@ -23,7 +23,6 @@ func PriceAddAndUpdateByItemApi(c *gin.Context) {
 	sng, _ := c.Get("server_number")
 	u_id, _ := c.Get("user_id")
 	role, _ := c.Get("user_role")
-	u_time := time.Now()
 	fmt.Println(sn, "=?", sng, role, role.(int))
 	if !(sn == sng || sng == "10000") || !(role.(int) > 0 && role.(int) < 8) {
 		c.JSON(int(status.ExpectationFailed), gin.H{
@@ -47,7 +46,7 @@ func PriceAddAndUpdateByItemApi(c *gin.Context) {
 	if strings.Contains(citem, "磁") {
 		ccp.IsMagnetism = true
 	}
-	ccp.GmtModified = null.NewTime(u_time, true)
+	ccp.GmtModified = time.Now().Unix()
 	ccp.Updater = null.NewString(u_id.(string), true)
 	if citem == "" {
 		if ccp.Item == "" {
@@ -127,7 +126,7 @@ func PriceAddAndUpdateByItemApi(c *gin.Context) {
 			} else {
 				cp.Price = null.NewString(ccp.Price.String, true)
 			}
-			cp.GmtModified = null.NewTime(u_time, true)
+			cp.GmtModified = time.Now().Unix()
 			cp.IsMagnetism = ccp.IsMagnetism
 			if cp.Shipping.Valid {
 				cp.Shipping = ccp.Shipping

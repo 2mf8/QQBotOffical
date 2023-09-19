@@ -61,27 +61,29 @@ func (j *JwtClaims) GenToken(key []byte) (string, error) {
 	return token.SignedString(key)
 }
 
-func GenTokens(user_id, user_name, user_avatar, server_number, email string, user_role, timeout int) ([2]string, [2]error) {
+func GenTokens(user_id, user_name, user_avatar, server_number, email string, user_role, timeout int) ([2]string, int64, [2]error) {
 	var tokens [2]string
 	var errs [2]error
+	_timeout := time.Now().Add(time.Hour* time.Duration(timeout)).Unix()
 	tg := GenJwtClaims(user_id, user_name, user_avatar, server_number, email, user_role, timeout)
 	t, e1 := tg.GenToken(jwtKey)
 	tokens[0] = t
 	errs[0] = e1
-	rtg := GenJwtClaims(user_id, user_name, user_avatar, server_number, email, user_role, timeout*6)
+	rtg := GenJwtClaims(user_id, user_name, user_avatar, server_number, email, user_role, timeout*36)
 	rt, e2 := rtg.GenToken(jwtRefreshKey)
 	tokens[1] = rt
 	errs[1] = e2
-	return tokens, errs
+	return tokens, _timeout, errs
 }
 
-func RefreshTokens(refreshTokens [2]string, timeout int) ([2]string, string, [2]error) {
+func RefreshTokens(refreshTokens [2]string, timeout int) ([2]string, string, int64, [2]error) {
 	tokens := [2]string{}
 	errs := [2]error{}
+	_timeout := time.Now().Add(time.Hour* time.Duration(timeout)).Unix()
 	bs := GetKeys()
 	if refreshTokens[0] == "" {
 		status := "token为空，请正常登录"
-		return tokens, status, errs
+		return tokens, status, -1, errs
 	}
 	_r, err := ParseToken(refreshTokens[0], bs[0])
 	fmt.Println(err)
@@ -90,7 +92,7 @@ func RefreshTokens(refreshTokens [2]string, timeout int) ([2]string, string, [2]
 		fmt.Println(rj, e)
 		if e != nil {
 			status := "token已过期，请正常登录"
-			return tokens, status, errs
+			return tokens, status, -1, errs
 		}
 		tg := GenJwtClaims(rj.UserId, rj.Username, rj.UserAvatar, rj.ServerNumber, rj.Email, rj.UserRole, timeout)
 		t, e1 := tg.GenToken(bs[0])
@@ -100,13 +102,13 @@ func RefreshTokens(refreshTokens [2]string, timeout int) ([2]string, string, [2]
 		setUserRole = rj.UserRole
 		setServerNumber = rj.ServerNumber
 		setUserId = rj.UserId
-		rtg := GenJwtClaims(rj.UserId, rj.Username, rj.UserAvatar, rj.ServerNumber, rj.Email, rj.UserRole, timeout*6)
+		rtg := GenJwtClaims(rj.UserId, rj.Username, rj.UserAvatar, rj.ServerNumber, rj.Email, rj.UserRole, timeout*36)
 		rt, e2 := rtg.GenToken(bs[1])
 		tokens[1] = rt
 		errs[1] = e2
 		status := "token刷新成功"
 		fmt.Printf(`curl -H "Authorization: Bearer %s" -H "Refresh: Bearer %s" http://localhost:8080/price/四`, tokens[0], tokens[1])
-		return tokens, status, errs
+		return tokens, status, _timeout, errs
 	}
 	setUsername = _r.Username
 	setUserRole = _r.UserRole
@@ -114,7 +116,7 @@ func RefreshTokens(refreshTokens [2]string, timeout int) ([2]string, string, [2]
 	setUserId = _r.UserId
 	status := "登录状态正常"
 	tokens = refreshTokens
-	return tokens, status, errs
+	return tokens, status, _timeout, errs
 }
 
 func ParseToken(tokenString string, key []byte) (*JwtClaims, error) {
@@ -136,36 +138,29 @@ func JWTAuthMiddlewareOrRefreshToken() func(c *gin.Context) {
 		fmt.Println(authHeader)
 		//if c.Request.Method != "GET" {
 		if authHeader == "" {
-			c.JSON(int(status.Unauthorized), gin.H{
-				"code": status.TokenNull,
-				"msg":  "访问失败，token为空，请登录",
-			})
-			c.Abort()
-			return
+			refreshHeader := c.Request.Header.Get("Refresh")
+			fmt.Println(refreshHeader)
+			if refreshHeader != "" {
+				rparts := strings.SplitN(refreshHeader, " ", 2)
+				if len(rparts) == 2 && rparts[0] == "Bearer" {
+					tokens[1] = rparts[1]
+				}
+			}
+			_, _status, _, _ := RefreshTokens(tokens, 2)
+			if !strings.Contains(_status, "状态正常") {
+				c.JSON(int(status.ExpectationFailed), gin.H{
+					"code": 200,
+					"msg":  _status,
+				})
+				c.Abort()
+				return
+			}
 		}
 		parts := strings.SplitN(authHeader, " ", 2)
 		if !(len(parts) == 2 && parts[0] == "Bearer") {
 			c.JSON(int(status.Unauthorized), gin.H{
 				"code": status.TokenInvalid,
 				"msg":  "访问失败，无效的token，请登录。",
-			})
-			c.Abort()
-			return
-		}
-		tokens[0] = parts[1]
-		refreshHeader := c.Request.Header.Get("Refresh")
-		fmt.Println(refreshHeader)
-		if refreshHeader != "" {
-			rparts := strings.SplitN(refreshHeader, " ", 2)
-			if len(rparts) == 2 && rparts[0] == "Bearer" {
-				tokens[1] = rparts[1]
-			}
-		}
-		_, _status, _ := RefreshTokens(tokens, 2)
-		if !strings.Contains(_status, "状态正常") {
-			c.JSON(int(status.ExpectationFailed), gin.H{
-				"code": 200,
-				"msg":  _status,
 			})
 			c.Abort()
 			return

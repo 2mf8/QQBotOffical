@@ -55,7 +55,7 @@ func TokenGetApi(c *gin.Context) {
 	}
 	json.Unmarshal(bv, &li)
 	if l.Account == li.Account && l.Code == li.Code {
-		ts, es := middleware.GenTokens(u.UserId.String, u.Username.String, u.UserAvatar.String, u.ServerNumber.String, u.Email.String, u.UserRole, 2)
+		ts, ti, es := middleware.GenTokens(u.UserId.String, u.Username.String, u.UserAvatar.String, u.ServerNumber.String, u.Email.String, u.UserRole, 2)
 		if es[0] != nil {
 			c.JSON(int(status.ExpectationFailed), gin.H{
 				"code": status.GetTokenError,
@@ -69,6 +69,7 @@ func TokenGetApi(c *gin.Context) {
 				"msg":       "登录成功",
 				"token":     ts[0],
 				"refresh":   ts[1],
+				"expires_at":   ti - 600,
 				"user_info": u,
 			})
 			//c.String(http.StatusOK, `curl -H "Authorization: Bearer %s" -H "Refresh: Bearer %s" http://localhost:8080/prices/四`, ts[0], ts[1])
