@@ -15,7 +15,7 @@ import (
 
 type Block struct{}
 
-func (block *Block) Do(ctx *context.Context, admins []string, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, attachments []string) utils.RetStuct {
+func (block *Block) Do(ctx *context.Context, messageType public.MessageType, admins []string, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, attachments []string) utils.RetStuct {
 
 	isBotAdmin := public.IsBotAdmin(userId, admins)
 	ispblock, _ := database.PBlockGet(guildId, userId)
@@ -27,7 +27,7 @@ func (block *Block) Do(ctx *context.Context, admins []string, gmap map[string][]
 		}
 	}
 
-	s, b := public.Prefix(msg, ".")
+	s, b := public.Prefix(msg, ".", messageType)
 	if !b {
 		return utils.RetStuct{
 			RetVal: utils.MESSAGE_IGNORE,

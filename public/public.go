@@ -12,6 +12,16 @@ import (
 	"time"
 )
 
+type MessageType int
+
+const (
+	GuildMessage MessageType = iota
+	GroupMessage
+	PrivateMessage
+	DirectMessage
+	Undefined
+)
+
 type PluginConfig struct {
 	Conf []string
 }
@@ -24,6 +34,16 @@ type Node struct {
 type BotLogin struct {
 	AppId       uint64
 	AccessToken string
+}
+
+type GetAppAccessToken struct {
+	AppId        string `json:"appId"`
+	ClientSecret string `json:"clientSecret"`
+}
+
+type QQGetAppAccessTokenResp struct {
+	AccessToken string `json:"access_token"`
+	ExpiresIn   string `json:"expires_in"`
 }
 
 func StartsWith(s, prefix string) bool {
@@ -87,9 +107,13 @@ func IsConnErr(err error) bool {
 	return needNewConn
 }
 
-func Prefix(s string, p string) (r string, b bool) {
+func Prefix(s string, p string, mt MessageType) (r string, b bool) {
 	if StartsWith(s, p) {
 		r = strings.TrimSpace(string([]byte(s)[len(p):]))
+		return r, true
+	}
+	if mt == GroupMessage {
+		r = s
 		return r, true
 	}
 	r = s

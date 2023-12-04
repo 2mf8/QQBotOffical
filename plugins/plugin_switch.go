@@ -15,14 +15,15 @@ import (
 type BotSwitch struct {
 }
 
-func (botSwitch *BotSwitch) Do(ctx *context.Context, admins []string, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, attachments []string) utils.RetStuct {
+func (botSwitch *BotSwitch) Do(ctx *context.Context, messageType public.MessageType, admins []string, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, attachments []string) utils.RetStuct {
 
-	s, b := public.Prefix(msg, ".")
+	s, b := public.Prefix(msg, ".", messageType)
 	if !b {
 		return utils.RetStuct{
 			RetVal: utils.MESSAGE_IGNORE,
 		}
 	}
+	messageType = public.Undefined
 	isAdmin := public.IsAdmin(useRole)
 	if public.StartsWith(s, "开启") && (isAdmin || botIsAdmin) {
 		s = strings.TrimSpace(strings.TrimPrefix(s, "开启"))

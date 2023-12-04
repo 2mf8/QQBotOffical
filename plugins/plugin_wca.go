@@ -18,16 +18,17 @@ import (
 type WCA struct {
 }
 
-func (wca *WCA) Do(ctx *context.Context, admins []string, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, attachments []string) utils.RetStuct {
-	s, b := public.Prefix(msg, ".")
+func (wca *WCA) Do(ctx *context.Context, messageType public.MessageType, admins []string, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, attachments []string) utils.RetStuct {
+	s, b := public.Prefix(msg, ".", messageType)
 	if !b {
 		return utils.RetStuct{
 			RetVal: utils.MESSAGE_IGNORE,
 		}
 	}
+	fmt.Println("wca", s)
 	if strings.HasPrefix(s, "wca") {
 		w_m := strings.TrimSpace(strings.TrimSpace(string([]byte(s)[len("wca"):])))
-		fmt.Println(w_m)
+		fmt.Println("wca", w_m)
 		url := "http://www.2mf8.cn:8100/wcaPerson/searchPeople?q=" + url.QueryEscape(w_m)
 		resp, _ := http.Get(url)
 		s := database.Info{}
@@ -45,13 +46,14 @@ func (wca *WCA) Do(ctx *context.Context, admins []string, gmap map[string][]stri
 				gen = "Female"
 			}
 			s_r := s.Data[0].Name + "\n" + s.Data[0].Id + "," + s.Data[0].CountryId + "," + gen + database.WcaPersonHandler(s.Data[0].Id)
-			// fmt.Println(s_r)
+			fmt.Println(s_r)
 			return utils.RetStuct{
 				RetVal: utils.MESSAGE_BLOCK,
 				ReplyMsg: &utils.Msg{
 					Text: s_r,
 				},
-				MsgId: msgId,
+				MsgId:   msgId,
+				ReqType: utils.GuildMsg,
 			}
 		} else if s.TotalElements > 99 {
 			return utils.RetStuct{
@@ -59,7 +61,8 @@ func (wca *WCA) Do(ctx *context.Context, admins []string, gmap map[string][]stri
 				ReplyMsg: &utils.Msg{
 					Text: "搜索范围太大！",
 				},
-				MsgId: msgId,
+				MsgId:   msgId,
+				ReqType: utils.GuildMsg,
 			}
 		} else {
 			rankList := ""
@@ -87,7 +90,8 @@ func (wca *WCA) Do(ctx *context.Context, admins []string, gmap map[string][]stri
 				ReplyMsg: &utils.Msg{
 					Text: s_r,
 				},
-				MsgId: msgId,
+				MsgId:   msgId,
+				ReqType: utils.GuildMsg,
 			}
 		}
 	}

@@ -9,23 +9,22 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
-type ServerNumberSet struct {
-	ServerNumbers map[string]string
-	Intent        map[string]int
+type ServerAuthSet struct {
+	Groups []string
 }
 
-type ServerNumberSetSync struct {
-	IsTrue              bool
-	ServerNumberSetSync *ServerNumberSet
+type ServerAuthSetSync struct {
+	IsTrue            bool
+	ServerAuthSetSync *ServerAuthSet
 }
 
-func (s *ServerNumberSet) ServerNumbersSet() error {
+func (s *ServerAuthSet) ServerAuthsSet() error {
 	output, err := json.MarshalIndent(&s, "", "\t")
 	if err != nil {
 		fmt.Println("Error marshalling to JSON:", err)
 		return err
 	}
-	err = os.WriteFile("server_numbers.json", output, 0644)
+	err = os.WriteFile("server_Auths.json", output, 0644)
 	if err != nil {
 		fmt.Println("Error writing JSON to file", err)
 		return err
@@ -33,8 +32,8 @@ func (s *ServerNumberSet) ServerNumbersSet() error {
 	return nil
 }
 
-func ServerNumbersRead() (s ServerNumberSet, err error) {
-	jsonFile, err := os.Open("server_numbers.json")
+func ServerAuthsRead() (s ServerAuthSet, err error) {
+	jsonFile, err := os.Open("server_Auths.json")
 	if err != nil {
 		fmt.Println("Error reading JSON File:", err)
 		return
@@ -50,19 +49,18 @@ func ServerNumbersRead() (s ServerNumberSet, err error) {
 	return
 }
 
-func ServerNumbersGet() (s ServerNumberSetSync, err error) {
-	sns := ServerNumberSet{
-		ServerNumbers: map[string]string{},
-		Intent:        map[string]int{},
+func ServerAuthsGet() (s ServerAuthSetSync, err error) {
+	sns := ServerAuthSet{
+		Groups: []string{},
 	}
-	snss := ServerNumberSetSync{
-		IsTrue:              true,
-		ServerNumberSetSync: &sns,
+	snss := ServerAuthSetSync{
+		IsTrue:            true,
+		ServerAuthSetSync: &sns,
 	}
 	var vb []byte
 	var bw_set []byte
 
-	bw := "server_numbers"
+	bw := "server_Auths"
 	c := Pool.Get()
 	defer c.Close()
 	c.Send("Get", bw)
@@ -70,15 +68,15 @@ func ServerNumbersGet() (s ServerNumberSetSync, err error) {
 	vb, err = redis.Bytes(c.Receive())
 	if err != nil {
 		fmt.Println("[查询] 首次查询-守卫", bw)
-		snr, err := ServerNumbersRead()
+		snr, err := ServerAuthsRead()
 		if err != nil {
-			snss = ServerNumberSetSync{
-				IsTrue:              false,
-				ServerNumberSetSync: &sns,
+			snss = ServerAuthSetSync{
+				IsTrue:            false,
+				ServerAuthSetSync: &sns,
 			}
-			snss.ServerNumberSetSync.ServerNumbersSet()
+			snss.ServerAuthSetSync.ServerAuthsSet()
 		}
-		snss.ServerNumberSetSync = &snr
+		snss.ServerAuthSetSync = &snr
 		bw_set, _ = json.Marshal(&snss)
 		c.Send("Set", bw, bw_set)
 		c.Flush()
@@ -90,38 +88,21 @@ func ServerNumbersGet() (s ServerNumberSetSync, err error) {
 	if err != nil {
 		fmt.Println("[错误] Unmarshal出错")
 	}
-	fmt.Println("[Redis] Key(", bw, ") Value(", snss.IsTrue, *snss.ServerNumberSetSync, ")") //测试用
+	fmt.Println("[Redis] Key(", bw, ") Value(", snss.IsTrue, *snss.ServerAuthSetSync, ")") //测试用
 	return snss, err
 }
 
-func (s *ServerNumberSetSync) ServerNumberUpdate(sn, value string, intent int) error {
-	if s.ServerNumberSetSync.ServerNumbers == nil {
-		var _tsnm map[string]string = map[string]string{}
-		var _tinm map[string]int = map[string]int{}
-		_tsnm[sn] = value
-		_tinm[value] = intent
-		tsnm := ServerNumberSet{
-			ServerNumbers: _tsnm,
-		}
-		s.ServerNumberSetSync = &tsnm
+func (s *ServerAuthSetSync) ServerAuthUpdate(groupId string) error {
+	if groupId != "" {
+		s.ServerAuthSetSync.Groups = append(s.ServerAuthSetSync.Groups, groupId)
 	}
-	if s.ServerNumberSetSync.Intent == nil {
-		var _tinm map[string]int = map[string]int{}
-		_tinm[value] = intent
-		tsnm := ServerNumberSet{
-			Intent: _tinm,
-		}
-		s.ServerNumberSetSync = &tsnm
-	}
-	s.ServerNumberSetSync.ServerNumbers[sn] = value
-	s.ServerNumberSetSync.Intent[value] = intent
-	bw := "server_numbers"
+	bw := "server_Auths"
 	var bw_set []byte
-	serverNumberSetSync := ServerNumberSetSync{
-		IsTrue:              true,
-		ServerNumberSetSync: s.ServerNumberSetSync,
+	ServerAuthSetSync := ServerAuthSetSync{
+		IsTrue:            true,
+		ServerAuthSetSync: s.ServerAuthSetSync,
 	}
-	bw_set, _ = json.Marshal(&serverNumberSetSync)
+	bw_set, _ = json.Marshal(&ServerAuthSetSync)
 	c := Pool.Get()
 	defer c.Close()
 	c.Send("Set", bw, bw_set)
@@ -131,28 +112,46 @@ func (s *ServerNumberSetSync) ServerNumberUpdate(sn, value string, intent int) e
 		fmt.Println("[错误] Receive出错")
 	}
 	_ = fmt.Sprintf("%#v", v)
-	err = s.ServerNumberSetSync.ServerNumbersSet()
+	err = s.ServerAuthSetSync.ServerAuthsSet()
 	return err
 }
 
-func (s *ServerNumberSetSync) ServerNumbersDelete(sn, value string) {
-	delete(s.ServerNumberSetSync.Intent, value)
-	delete(s.ServerNumberSetSync.ServerNumbers, sn)
-	bw := "server_numbers"
-	var bw_set []byte
-	serverNumberSetSync := ServerNumberSetSync{
-		IsTrue:              true,
-		ServerNumberSetSync: s.ServerNumberSetSync,
+func (s *ServerAuthSetSync) ServerAuthsDelete(groupId string) {
+	groupsTemp := []string{}
+	if groupId != "" {
+		for _, v := range s.ServerAuthSetSync.Groups {
+			if v != groupId {
+				groupsTemp = append(groupsTemp, v)
+			}
+			continue
+		}
+		s.ServerAuthSetSync.Groups = groupsTemp
+		bw := "server_Auths"
+		var bw_set []byte
+		ServerAuthSetSync := ServerAuthSetSync{
+			IsTrue:            true,
+			ServerAuthSetSync: s.ServerAuthSetSync,
+		}
+		bw_set, _ = json.Marshal(&ServerAuthSetSync)
+		c := Pool.Get()
+		defer c.Close()
+		c.Send("Set", bw, bw_set)
+		c.Flush()
+		v, err := c.Receive()
+		if err != nil {
+			fmt.Println("[错误] Receive出错")
+		}
+		_ = fmt.Sprintf("%#v", v)
+		s.ServerAuthSetSync.ServerAuthsSet()
 	}
-	bw_set, _ = json.Marshal(&serverNumberSetSync)
-	c := Pool.Get()
-	defer c.Close()
-	c.Send("Set", bw, bw_set)
-	c.Flush()
-	v, err := c.Receive()
-	if err != nil {
-		fmt.Println("[错误] Receive出错")
+}
+
+func IsExist(groupId string) bool {
+	sgg, _ := ServerAuthsGet()
+	for _, v := range sgg.ServerAuthSetSync.Groups {
+		if v == groupId {
+			return true
+		}
 	}
-	_ = fmt.Sprintf("%#v", v)
-	s.ServerNumberSetSync.ServerNumbersSet()
+	return false
 }

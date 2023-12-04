@@ -44,7 +44,7 @@ func Tnoodle(scramble string) (s Scramble) {
 }
 
 func GetScramble(s string) string {
-	resp, err := http.Get("http://localhost:2014/scramble/.txt?=" + s)
+	resp, err := http.Get("http://2mf8.cn:2014/scramble/.txt?=" + s)
 	if err != nil {
 		return "获取失败"
 	}

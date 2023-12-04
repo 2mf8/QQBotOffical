@@ -19,7 +19,7 @@ import (
 type PricePlugin struct {
 }
 
-func (price *PricePlugin) Do(ctx *context.Context, admins []string, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, attachments []string) utils.RetStuct {
+func (price *PricePlugin) Do(ctx *context.Context, messageType public.MessageType, admins []string, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, attachments []string) utils.RetStuct {
 
 	isBotAdmin := public.IsBotAdmin(userId, admins)
 	isAdmin := public.IsAdmin(useRole)
@@ -31,7 +31,8 @@ func (price *PricePlugin) Do(ctx *context.Context, admins []string, gmap map[str
 	str3 := strings.TrimSpace(reg3.ReplaceAllString(str2, "&"))
 	is_magnetism := false
 
-	s, b := public.Prefix(str3, "%")
+	messageType = public.Undefined
+	s, b := public.Prefix(str3, "%", messageType)
 	if !b {
 		return utils.RetStuct{
 			RetVal: utils.MESSAGE_IGNORE,
@@ -52,11 +53,13 @@ func (price *PricePlugin) Do(ctx *context.Context, admins []string, gmap map[str
 		}
 	}
 
-	if strings.Contains(s, "磁") {
-		is_magnetism = true
+	if len(attachments) == 0 {
+		attachments = append(attachments, "HJdhuhjd")
 	}
-
-	if public.Contains(priceSearch, "黄小姐") {
+	_pass := database.IsExist(guildId)
+	fmt.Println("通过？", _pass)
+	if _pass {
+		fmt.Println("通过")
 		if public.StartsWith(s, "#+") && (isAdmin || isBotAdmin) {
 			str4 := strings.TrimSpace(string([]byte(s)[len("#+"):]))
 			str5 := strings.Split(str4, "##")

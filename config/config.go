@@ -8,6 +8,7 @@ type Config struct {
 	Plugins          []string
 	AppId            uint64
 	AccessToken      string
+	ClientSecret     string
 	Admins           []string
 	DatabaseUser     string
 	DatabasePassword string

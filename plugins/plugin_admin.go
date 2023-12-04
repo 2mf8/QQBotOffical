@@ -14,9 +14,10 @@ import (
 type Admin struct {
 }
 
-func (admin *Admin) Do(ctx *context.Context, admins []string, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, attachments []string) utils.RetStuct {
+func (admin *Admin) Do(ctx *context.Context, messageType public.MessageType, admins []string, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, attachments []string) utils.RetStuct {
 
-	s, b := public.Prefix(msg, ".")
+	s, b := public.Prefix(msg, ".", messageType)
+	messageType = public.Undefined
 
 	if !b || !(public.StartsWith(s, "jin") || public.StartsWith(s, "jie") || public.StartsWith(s, "t") || public.StartsWith(s, "T")) {
 		return utils.RetStuct{

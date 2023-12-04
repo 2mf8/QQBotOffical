@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/2mf8/QQBotOffical/public"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -39,7 +40,7 @@ type Msg struct {
 }
 
 type Plugin interface {
-	Do(ctx *context.Context, admins []string, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, attachments []string) (retStuct RetStuct)
+	Do(ctx *context.Context, messageType public.MessageType, admins []string, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, attachments []string) (retStuct RetStuct)
 }
 
 var PluginSet map[string]Plugin

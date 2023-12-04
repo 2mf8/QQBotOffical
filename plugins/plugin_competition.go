@@ -27,17 +27,17 @@ type ItmeAndBestAndAverage struct {
 	AverageUserName string
 }
 
-func (rep *Competition) Do(ctx *context.Context, admins []string, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, attachments []string) utils.RetStuct {
+func (rep *Competition) Do(ctx *context.Context, messageType public.MessageType, admins []string, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, attachments []string) utils.RetStuct {
 	var sic []string
 
 	isBotAdmin := public.IsBotAdmin(userId, admins)
-	s, b := public.Prefix(msg, ".")
+	s, b := public.Prefix(msg, ".", messageType)
 	if !b {
 		return utils.RetStuct{
 			RetVal: utils.MESSAGE_IGNORE,
 		}
 	}
-
+	messageType = public.Undefined
 	reg1 := regexp.MustCompile("@!")
 	reg2 := regexp.MustCompile("@")
 	reg3 := regexp.MustCompile(">")
@@ -46,7 +46,7 @@ func (rep *Competition) Do(ctx *context.Context, admins []string, gmap map[strin
 	s = strings.TrimSpace(reg2.ReplaceAllString(s, "at qq=\""))
 	s = strings.TrimSpace(reg3.ReplaceAllString(s, "\"/>"))
 
-	sc, b := public.Prefix(s, "新赛季")
+	sc, b := public.Prefix(s, "新赛季", messageType)
 	if b && (isBotAdmin || userId == "7245178405041604418") {
 		if sc == "" {
 			reply := "格式错误"
@@ -143,7 +143,7 @@ func (rep *Competition) Do(ctx *context.Context, admins []string, gmap map[strin
 			ReqType: utils.GuildMsg,
 		}
 	}
-	sczj, b := public.Prefix(s, "赛季追加")
+	sczj, b := public.Prefix(s, "赛季追加", messageType)
 	if b && isBotAdmin {
 		if sczj == "" {
 			reply := "格式错误"
@@ -248,7 +248,7 @@ func (rep *Competition) Do(ctx *context.Context, admins []string, gmap map[strin
 		}
 	}
 
-	scr, b := public.Prefix(s, "赛季打乱")
+	scr, b := public.Prefix(s, "赛季打乱", messageType)
 	if b {
 		var si []string
 		if strings.TrimSpace(scr) == "" {
@@ -548,7 +548,7 @@ func (rep *Competition) Do(ctx *context.Context, admins []string, gmap map[strin
 		}
 	}
 
-	sjcj, b := public.Prefix(s, "赛季成绩")
+	sjcj, b := public.Prefix(s, "赛季成绩", messageType)
 	if b {
 		cji := strings.Split(sjcj, " ")
 		v, err := database.CompetitionRead()
@@ -667,7 +667,7 @@ func (rep *Competition) Do(ctx *context.Context, admins []string, gmap map[strin
 		}
 	}
 
-	_, b = public.Prefix(s, "我的成绩")
+	_, b = public.Prefix(s, "我的成绩", messageType)
 	if b {
 		v, err := database.CompetitionRead()
 		if err != nil {
@@ -726,7 +726,7 @@ func (rep *Competition) Do(ctx *context.Context, admins []string, gmap map[strin
 		}
 	}
 
-	cjsc, b := public.Prefix(s, "成绩删除")
+	cjsc, b := public.Prefix(s, "成绩删除", messageType)
 	if b {
 		cji := strings.Split(cjsc, " ")
 		v, err := database.CompetitionRead()
@@ -791,7 +791,7 @@ func (rep *Competition) Do(ctx *context.Context, admins []string, gmap map[strin
 		}
 	}
 
-	jcjsc, b := public.Prefix(s, "$假成绩删除")
+	jcjsc, b := public.Prefix(s, "$假成绩删除", messageType)
 	if b {
 		_, jus := public.GuildAtConvert(jcjsc)
 		ju := ""
@@ -895,7 +895,7 @@ func (rep *Competition) Do(ctx *context.Context, admins []string, gmap map[strin
 		}
 	}
 
-	sjpm, b := public.Prefix(s, "赛季排名")
+	sjpm, b := public.Prefix(s, "赛季排名", messageType)
 	if b {
 		cji := strings.Split(sjpm, " ")
 		v, err := database.CompetitionRead()
@@ -997,7 +997,7 @@ func (rep *Competition) Do(ctx *context.Context, admins []string, gmap map[strin
 		}
 	}
 
-	_, b = public.Prefix(s, "赛季擂主")
+	_, b = public.Prefix(s, "赛季擂主", messageType)
 	if b {
 		v, err := database.CompetitionRead()
 		if err != nil {

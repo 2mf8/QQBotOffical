@@ -16,14 +16,15 @@ import (
 type LearnPlugin struct {
 }
 
-func (learnPlugin *LearnPlugin) Do(ctx *context.Context, admins []string, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, imgs []string) utils.RetStuct {
+func (learnPlugin *LearnPlugin) Do(ctx *context.Context, messageType public.MessageType, admins []string, gmap map[string][]string, guildId, channelId, userId, msg, msgId, username, avatar, srcGuildID string, useRole []string, isBot, isDirectMessage, botIsAdmin bool, priceSearch string, imgs []string) utils.RetStuct {
 
-	s, b := public.Prefix(msg, ".")
+	s, b := public.Prefix(msg, ".", messageType)
 	if !b {
 		return utils.RetStuct{
 			RetVal: utils.MESSAGE_IGNORE,
 		}
 	}
+	messageType = public.Undefined
 	isAdmin := public.IsAdmin(useRole)
 	isBotAdmin := public.IsBotAdmin(userId, admins)
 	ggk, _ := database.GetJudgeKeys()
