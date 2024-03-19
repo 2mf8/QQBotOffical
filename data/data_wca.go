@@ -116,6 +116,16 @@ func WcaPersonHandler(s string) string {
 	return result
 }
 
+func SearchPeople(nameOrId string) Info {
+	url := fmt.Sprintf("http://www.2mf8.cn:8100/wcaPerson/searchPeople?q=%s", url.QueryEscape(nameOrId))
+	resp, _ := http.Get(url)
+	s := Info{}
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	json.Unmarshal([]byte(body), &s)
+	return s
+}
+
 /*func main() {
 	url := "http://www.2mf8.cn:8100/wcaPerson/searchPeople?q=" + url.QueryEscape("2017WANY29")
 	resp, _ := http.Get(url)

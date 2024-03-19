@@ -36,7 +36,6 @@ func main() {
 	go GinRun()
 
 	fmt.Println(public.RandomString(6))
-	//go database.GetAll()
 
 	tomlData := `
 	Plugins = ["守卫","开关","复读","服务号","WCA","回复","频道管理","赛季","查价","打乱","学习"]   # 插件管理
@@ -104,6 +103,16 @@ func main() {
 		Content = strings.TrimSpace(reg4.ReplaceAllString(Content, ""))
 		isBotAdmin := public.IsBotAdmin(UserId, allconfig.Admins)
 
+		_, tr := public.Prefix(Content, "img", public.GuildMessage)
+		if tr {
+			newMsg := &dto.GroupMessageToCreate{
+				Content: fmt.Sprintf(`<faceType=3,faceId="%s"><faceType=1,faceId="%s"`, "352", "178"),
+				MsgID:   data.MsgId,
+				MsgType: 0,
+				MsgReq:  2,
+			}
+			api.PostGroupMessage(ctx, GroupId, newMsg)
+		}
 		tg, tr := public.Prefix(Content, "授权", public.GuildMessage)
 		if tr {
 			isExist := false
@@ -157,22 +166,24 @@ func main() {
 			if retStuct.RetVal == utils.MESSAGE_BLOCK {
 				if retStuct.ReqType == utils.GuildMsg {
 					if retStuct.ReplyMsg != nil {
+						text := fmt.Sprintf("\n%s", strings.Trim(strings.Trim(retStuct.ReplyMsg.Text, "\r\n"), "\r"))
 						newMsg := &dto.GroupMessageToCreate{
-							Content: retStuct.ReplyMsg.Text, //+ "\n[🔗奇乐最新价格]\n(https://2mf8.cn/webview/#/pages/index/webview?url=https%3A%2F%2Fqilecube.gitee.io%2F)",
+							Content: text,
 							MsgID:   data.MsgId,
 							MsgType: 0,
 						}
-						api.PostGroupMessage(ctx, GroupId, newMsg)
 						if retStuct.ReplyMsg.Image != "" {
-							api.PostGroupRichMediaMessage(ctx, GroupId, &dto.GroupRichMediaMessageToCreate{FileType: 1, Url: retStuct.ReplyMsg.Image, SrvSendMsg: true})
+							fmt.Println(1)
+							resp, _ := api.PostGroupRichMediaMessage(ctx, GroupId, &dto.GroupRichMediaMessageToCreate{FileType: 1, Url: retStuct.ReplyMsg.Image, SrvSendMsg: false})
+							newMsg = &dto.GroupMessageToCreate{
+								Content: text,
+								Media:   &dto.FileInfo{FileInfo: resp.FileInfo},
+								MsgID:   data.MsgId,
+								MsgType: 7,
+								MsgReq:  2,
+							}
 						}
-						if len(retStuct.ReplyMsg.Images) == 2 {
-							api.PostGroupMessage(ctx, GroupId, &dto.GroupMessageToCreate{MsgID: data.MsgId, Image: "https://" + retStuct.ReplyMsg.Images[1]})
-						}
-						if len(retStuct.ReplyMsg.Images) >= 3 {
-							api.PostGroupMessage(ctx, GroupId, &dto.GroupMessageToCreate{MsgID: data.MsgId, Image: "https://" + retStuct.ReplyMsg.Images[1]})
-							api.PostGroupMessage(ctx, GroupId, &dto.GroupMessageToCreate{MsgID: data.MsgId, Image: "https://" + retStuct.ReplyMsg.Images[2]})
-						}
+						api.PostGroupMessage(ctx, GroupId, newMsg)
 					}
 					break
 				}
@@ -186,7 +197,6 @@ func main() {
 		for _, v := range gss {
 			fmt.Println(v.OwnerID, v.Name)
 		}*/
-
 		me, _ := api.Me(ctx)
 		atBot := fmt.Sprintf("<@!%s>", me.ID)
 		imgStr := ""
@@ -287,7 +297,7 @@ func main() {
 			api.PostMessage(ctx, channelId, &dto.MessageToCreate{Content: "授权信息已私发，请查看私信。", MsgID: msgId})
 		}
 
-		if rawMsg == ".登录" {
+		if public.StartsWith(rawMsg, ".获取验证码") {
 			randomString := public.RandomString(6)
 			database.RedisSet(randomString, []byte(userId))
 			//go GetT(userId)
@@ -301,8 +311,8 @@ func main() {
 				log.Warnf("私信出错了，err = %v", err)
 				return nil
 			}
-			api.PostDirectMessage(ctx, dmsg, &dto.MessageToCreate{Content: fmt.Sprintf("登录信息\n验证码：%s\n注：该验证码五分钟内有效。", randomString), MsgID: data.ID})
-			api.PostMessage(ctx, channelId, &dto.MessageToCreate{Content: "登录信息已私发，请查看私信。", MsgID: msgId})
+			api.PostDirectMessage(ctx, dmsg, &dto.MessageToCreate{Content: fmt.Sprintf("验证码：%s", randomString), MsgID: data.ID})
+			api.PostMessage(ctx, channelId, &dto.MessageToCreate{Content: "请查看私信。", MsgID: msgId})
 		}
 
 		if len(rolesMap[guildId]) == 0 {
